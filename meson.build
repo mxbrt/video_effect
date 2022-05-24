@@ -1,6 +1,6 @@
 project('mpv_glsl', 'c')
 
-sources = [ 'src/main.c', 'src/glad.c' ]
+sources = [ 'src/main.c', 'src/glad.c', 'src/player.c' ]
 dependencies = [ dependency('sdl2'), dependency('mpv') ]
 
 executable('player',
