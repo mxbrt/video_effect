@@ -1,14 +1,14 @@
-project('mpv_glsl', 'c')
+project('mpv_glsl', 'cpp')
 
 sources = [
-  'src/fbo.c',
+  'src/fbo.cpp',
   'src/glad.c',
-  'src/main.c',
+  'src/main.cpp',
   'src/player.c',
-  'src/shader.c',
-  'src/texture.c',
-  'src/util.c',
-  'src/vbo.c',
+  'src/shader.cpp',
+  'src/texture.cpp',
+  'src/util.cpp',
+  'src/vbo.cpp',
 ]
 dependencies = [ dependency('sdl2'), dependency('mpv') ]
 

@@ -15,8 +15,9 @@ void main()
     if (mouseVal.x > 0.9) {
         FragColor = texture(movieTexture, TexCoords);
     } else {
-        vec2 pixelationFactor = resolution * 4.0 * (mouseVal.x + 0.01);
-        vec2 coord = round(TexCoords * pixelationFactor) / pixelationFactor;
+        float blockiness = 28.0;
+        vec2 pixelFactor = resolution * (1.0 / (blockiness - blockiness * mouseVal.x));
+        vec2 coord = round(TexCoords * pixelFactor) / pixelFactor;
         vec4 col = vec4(0);
         for (int i = -1; i < 2; i++) {
             for (int j = -1; j < 2; j++) {
@@ -29,6 +30,6 @@ void main()
     }
 //#define DEBUG_MOUSE
 #ifdef DEBUG_MOUSE
-    FragColor = mouseVal;
+    FragColor = vec4(vec3(mouseVal.x), 1.0);
 #endif
 }

@@ -10,9 +10,9 @@
 #include "util.h"
 #include "vbo.h"
 
-float quadVertices[] = {  // vertex attributes for a quad that fills the entire
-                          // screen in Normalized Device Coordinates.
-    // positions   // texCoords
+std::vector<float> quadVertices = {  // vertex attributes for a quad that fills
+                                     // the entire screen in Normalized Device
+                                     // Coordinates. positions   // texCoords
     -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f,
 
     -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f};
@@ -26,6 +26,7 @@ static struct options opts = {.shader_reload = 0};
 
 static const int width = 1920;
 static const int height = 1080;
+static int frame = 0;
 
 void parse_args(int argc, char *argv[]) {
     if (argc < 2) die("pass a single media file as argument");
@@ -43,23 +44,15 @@ int main(int argc, char *argv[]) {
     parse_args(argc, argv);
     player_create();
 
-    struct shader pixelization_shader;
-    shader_create(&pixelization_shader, "shaders/vert.glsl",
-                  "shaders/frag.glsl");
+    auto pixelization_shader = Shader("shaders/vert.glsl", "shaders/frag.glsl");
+    auto mouse_shader = Shader("shaders/vert.glsl", "shaders/mouse.glsl");
 
-    struct shader mouse_shader;
-    shader_create(&mouse_shader, "shaders/vert.glsl", "shaders/mouse.glsl");
-
-    struct vbo quad_vbo;
-    vbo_create(&quad_vbo, quadVertices, sizeof(quadVertices));
+    auto quad_vbo = Vbo(quadVertices);
 
     // framebuffer configuration
-    struct fbo mpv_fbo;
-    fbo_create(&mpv_fbo, width, height);
-    struct fbo mouse_fbo[2];
+    auto mpv_fbo = Fbo(width, height);
+    Fbo mouse_fbo[2] = {Fbo(width, height), Fbo(width, height)};
     int mouse_fbo_idx = 0;
-    fbo_create(&mouse_fbo[0], width, height);
-    fbo_create(&mouse_fbo[1], width, height);
 
     // Play this file.
     const char *cmd[] = {"loadfile", opts.media_path, NULL};
@@ -96,19 +89,20 @@ int main(int argc, char *argv[]) {
             }
 
             if (opts.shader_reload) {
-                shader_reload(&pixelization_shader);
-                shader_reload(&mouse_shader);
+                pixelization_shader.reload();
+                mouse_shader.reload();
             }
 
-            struct fbo last_mouse_fbo = mouse_fbo[mouse_fbo_idx];
-            struct fbo cur_mouse_fbo = mouse_fbo[(mouse_fbo_idx + 1) % 2];
+            auto &last_mouse_fbo = mouse_fbo[mouse_fbo_idx];
+            auto &cur_mouse_fbo = mouse_fbo[(mouse_fbo_idx + 1) % 2];
             mouse_fbo_idx = (mouse_fbo_idx + 1) % 2;
 
             glUseProgram(mouse_shader.program);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, last_mouse_fbo.texture);
+            glBindTexture(GL_TEXTURE_2D, last_mouse_fbo.texture.id);
             glBindFramebuffer(GL_FRAMEBUFFER, cur_mouse_fbo.fbo);
             glDisable(GL_DEPTH_TEST);
+
             glUniform1i(
                 glGetUniformLocation(mouse_shader.program, "mouseTexture"), 0);
             glUniform2f(
@@ -121,9 +115,9 @@ int main(int argc, char *argv[]) {
 
             glUseProgram(pixelization_shader.program);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, mpv_fbo.texture);
+            glBindTexture(GL_TEXTURE_2D, mpv_fbo.texture.id);
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, cur_mouse_fbo.texture);
+            glBindTexture(GL_TEXTURE_2D, cur_mouse_fbo.texture.id);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glDisable(GL_DEPTH_TEST);
             glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -137,6 +131,10 @@ int main(int argc, char *argv[]) {
             glUniform2f(
                 glGetUniformLocation(pixelization_shader.program, "resolution"),
                 width, height);
+            glUniform1f(
+                glGetUniformLocation(pixelization_shader.program, "time"),
+                (float)frame);
+
             glad_glBindVertexArray(quad_vbo.vao);
             glDrawArrays(GL_TRIANGLES, 0, 6);
             player_swap_window();
@@ -145,11 +143,5 @@ int main(int argc, char *argv[]) {
 done:
 
     player_free();
-    shader_free(&pixelization_shader);
-    shader_free(&mouse_shader);
-    vbo_free(&quad_vbo);
-    fbo_free(&mpv_fbo);
-    fbo_free(&mouse_fbo[0]);
-    fbo_free(&mouse_fbo[1]);
     return 0;
 }

@@ -3,11 +3,14 @@
 
 #include <stddef.h>
 
-struct vbo {
+#include <vector>
+
+class Vbo {
+ public:
+  Vbo(std::vector<float>& vertices);
+  ~Vbo();
+
   unsigned int vao;
   unsigned int vbo;
 };
-
-void vbo_create(struct vbo* v, float* vertices, size_t vertices_size);
-void vbo_free(struct vbo *f);
 #endif  // VBO_H

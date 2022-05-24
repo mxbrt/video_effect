@@ -1,6 +1,10 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-unsigned int texture_create(int width, int height);
-void texture_free(unsigned int t);
+class Texture {
+ public:
+  Texture(int width, int height);
+  ~Texture();
+  unsigned int id;
+};
 #endif  // TEXTURE_H
