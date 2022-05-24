@@ -1,11 +1,6 @@
 #ifndef PLAYER_H
 #define PLAYER_H
-
-#include <glad/glad.h>
-// clang-format off
-// must be included after glad
-#include <SDL.h>
-// clang-format on
+#include "sdl_gl.h"
 
 void player_create();
 void player_free();

@@ -1,9 +1,9 @@
-#include "player.h"
-
 #include <SDL_video.h>
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
-#include <stdio.h>
+
+#include "util.h"
+#include "player.h"
 
 static Uint32 wakeup_on_mpv_render_update, wakeup_on_mpv_events;
 static mpv_handle *mpv;
@@ -23,11 +23,6 @@ static void on_mpv_events(void *ctx) {
 static void on_mpv_render_update(void *ctx) {
     SDL_Event event = {.type = wakeup_on_mpv_render_update};
     SDL_PushEvent(&event);
-}
-
-static void die(const char *msg) {
-    fprintf(stderr, "%s\n", msg);
-    exit(1);
 }
 
 void player_create() {
