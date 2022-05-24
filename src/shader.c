@@ -27,7 +27,7 @@ static int shader_compile(const char *path, int type) {
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(shader, 512, NULL, info);
-        die("shader compilation failed\n%s\n", info);
+        die("%s: compilation error\n%s\n", path, info);
     }
     return shader;
 }
