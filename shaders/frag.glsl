@@ -9,6 +9,7 @@ uniform sampler2D movieTexture;
 uniform sampler2D mouseTexture;
 uniform vec2 resolution;
 uniform float pixelization;
+uniform int mouseDebug;
 
 void main()
 {
@@ -28,8 +29,7 @@ void main()
         col /= vec4(9);
         FragColor = col;
     }
-//#define DEBUG_MOUSE
-#ifdef DEBUG_MOUSE
-    FragColor = vec4(vec3(mouseVal.x), 1.0);
-#endif
+    if (mouseDebug == 1) {
+        FragColor = vec4(mouseVal.xy, 0.0, 1.0);
+    }
 }
