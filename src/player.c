@@ -106,13 +106,14 @@ void player_cmd(const char *cmd[]) {
     mpv_command_async(mpv, 0, cmd);
 }
 
-int player_draw(struct window_ctx *ctx, SDL_Event event, unsigned int fbo) {
-    int redraw = 0;
+enum player_event player_run(struct window_ctx *ctx, SDL_Event event,
+                             unsigned int fbo) {
+    enum player_event result = PLAYER_NO_EVENT;
     // Happens when there is new work for the render thread
     // (such as rendering a new video frame or redrawing it).
     if (event.type == wakeup_on_mpv_render_update) {
         uint64_t flags = mpv_render_context_update(mpv_gl);
-        if (flags & MPV_RENDER_UPDATE_FRAME) redraw = 1;
+        if (flags & MPV_RENDER_UPDATE_FRAME) result = PLAYER_REDRAW;
     }
     // Happens when at least 1 new event is in the mpv event
     // queue.
@@ -132,19 +133,16 @@ int player_draw(struct window_ctx *ctx, SDL_Event event, unsigned int fbo) {
                 if (strstr(msg->text, "DR image")) printf("log: %s", msg->text);
                 continue;
             }
+            if (mp_event->event_id == MPV_EVENT_IDLE) {
+                result = PLAYER_IDLE;
+            }
             printf("event: %s\n", mpv_event_name(mp_event->event_id));
         }
     }
-    if (redraw) {
+    if (result == PLAYER_REDRAW) {
         int w, h;
         SDL_GetWindowSize(ctx->window, &w, &h);
         mpv_render_param params[] = {
-            // Specify the default framebuffer (0) as target. This will
-            // render onto the entire screen. If you want to show the
-            // video
-            // in a smaller rectangle or apply fancy transformations,
-            // you'll
-            // need to render into a separate FBO and draw it manually.
             {MPV_RENDER_PARAM_OPENGL_FBO,
              &(mpv_opengl_fbo){
                  .fbo = fbo,
@@ -159,16 +157,13 @@ int player_draw(struct window_ctx *ctx, SDL_Event event, unsigned int fbo) {
         // other API details.
         mpv_render_context_render(mpv_gl, params);
     }
-    return redraw;
+    return result;
 }
-
-/*void player_swap_window() { SDL_GL_SwapWindow(window); }*/
 
 void player_free() {
     // Destroy the GL renderer and all of the GL objects it allocated. If video
     // is still running, the video track will be deselected.
     mpv_render_context_free(mpv_gl);
-
     mpv_detach_destroy(mpv);
 }
 

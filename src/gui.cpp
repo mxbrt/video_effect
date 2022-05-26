@@ -23,9 +23,7 @@ void Gui::render(float& pixelization) {
   ImGui::NewFrame();
   {
     ImGui::Begin("Settings");
-    ImGui::SliderFloat(
-        "Pixelization", &pixelization, 0.0f,
-        100.0f);
+    ImGui::SliderFloat("Pixelization", &pixelization, 1.0f, 100.0f);
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

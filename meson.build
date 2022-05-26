@@ -7,6 +7,7 @@ sources = [
   'src/main.cpp',
   'src/player.c',
   'src/shader.cpp',
+  'src/shuffler.cpp',
   'src/texture.cpp',
   'src/util.cpp',
   'src/vbo.cpp',

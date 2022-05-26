@@ -2,11 +2,13 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 
 #include "fbo.h"
 #include "gui.h"
 #include "player.h"
 #include "shader.h"
+#include "shuffler.h"
 #include "texture.h"
 #include "util.h"
 #include "vbo.h"
@@ -20,7 +22,7 @@ std::vector<float> quadVertices = {  // vertex attributes for a quad that fills
 
 struct options {
     int shader_reload;
-    char *media_path;
+    std::string video_path;
 };
 
 static struct options opts = {.shader_reload = 0};
@@ -30,15 +32,24 @@ static const int height = 1080;
 static int frame = 0;
 
 void parse_args(int argc, char *argv[]) {
-    if (argc < 2) die("pass a single media file as argument");
-    for (int opt_idx = 1; opt_idx < argc - 1; opt_idx++) {
-        if (!strcmp(argv[opt_idx], "--shader-reload")) {
+    for (int opt_idx = 1; opt_idx < argc; opt_idx++) {
+        auto arg_str = std::string(argv[opt_idx]);
+        if (arg_str == "--video-dir") {
+            opt_idx++;
+            if (opt_idx >= argc) {
+                die("Missing value for option %s\n", arg_str.c_str());
+            }
+            opts.video_path = std::string(argv[opt_idx]);
+        } else if (arg_str == "--shader-reload") {
             opts.shader_reload = 1;
         } else {
             die("Unknown argument: %s\n", argv[opt_idx]);
         }
     }
-    opts.media_path = argv[argc - 1];
+
+    if (opts.video_path.empty()) {
+        die("Must specify video directory");
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -60,19 +71,22 @@ int main(int argc, char *argv[]) {
     float pixelization = 28.0;
 
     // Play this file.
-    const char *cmd[] = {"loadfile", opts.media_path, NULL};
+    auto shuffler = Shuffler(opts.video_path);
+    auto video_path = shuffler.get();
+    const char *cmd[] = {"loadfile", video_path.c_str(), NULL};
     player_cmd(cmd);
 
     while (1) {
         SDL_Event event;
+        enum player_event player_event = PLAYER_NO_EVENT;
         if (SDL_WaitEvent(&event) != 1) die("event loop error");
         gui.process_event(event);
-        int redraw = 0;
         switch (event.type) {
             case SDL_QUIT:
                 goto done;
             case SDL_WINDOWEVENT:
-                if (event.window.event == SDL_WINDOWEVENT_EXPOSED) redraw = 1;
+                if (event.window.event == SDL_WINDOWEVENT_EXPOSED)
+                    player_event = PLAYER_REDRAW;
                 break;
             case SDL_KEYDOWN:
                 if (event.key.keysym.sym == SDLK_SPACE) {
@@ -81,11 +95,17 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             default:
-                redraw = player_draw(&window_ctx, event, mpv_fbo.fbo);
+                player_event = player_run(&window_ctx, event, mpv_fbo.fbo);
                 break;
         }
 
-        if (redraw) {
+        if (player_event == PLAYER_IDLE) {
+            auto video_path = shuffler.get();
+            const char *cmd[] = {"loadfile", video_path.c_str(), NULL};
+            player_cmd(cmd);
+        }
+
+        if (player_event == PLAYER_REDRAW) {
             int x, y;
             uint32_t buttons;
             int mouse_click = 0;
