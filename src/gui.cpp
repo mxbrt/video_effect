@@ -19,13 +19,15 @@ bool Gui::process_event(SDL_Event& event) {
   return io.WantCaptureMouse;
 }
 
-void Gui::render(float& pixelization) {
+void Gui::render(struct GuiData& data) {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame();
   ImGui::NewFrame();
   {
     ImGui::Begin("Settings");
-    ImGui::SliderFloat("Pixelization", &pixelization, 1.0f, 100.0f);
+    ImGui::SliderFloat("Pixelization", &data.pixelization, 1.0f, 100.0f);
+    ImGui::SliderFloat("Mouse Radius", &data.mouse_radius, 0.0f, 1.0f);
+    ImGui::Checkbox("Mouse Debug", &data.mouse_debug);
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

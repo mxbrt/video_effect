@@ -69,7 +69,11 @@ int main(int argc, char *argv[]) {
     int mouse_fbo_idx = 0;
 
     // gui values
-    float pixelization = 28.0;
+    auto gui_data = GuiData{
+        .mouse_radius = 0.15,
+        .pixelization = 28.0,
+        .mouse_debug = false,
+    };
 
     // Play this file.
     auto shuffler = Shuffler(opts.video_path);
@@ -138,6 +142,9 @@ int main(int argc, char *argv[]) {
                 height);
             glUniform3f(glGetUniformLocation(mouse_shader.program, "mouse"), x,
                         height - y, mouse_click);
+            glUniform1f(
+                glGetUniformLocation(mouse_shader.program, "mouseRadius"),
+                gui_data.mouse_radius);
             glad_glBindVertexArray(quad_vbo.vao);
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -164,12 +171,15 @@ int main(int argc, char *argv[]) {
                 (float)frame);
             glUniform1f(glGetUniformLocation(pixelization_shader.program,
                                              "pixelization"),
-                        pixelization);
+                        gui_data.pixelization);
+            glUniform1i(
+                glGetUniformLocation(pixelization_shader.program, "mouseDebug"),
+                gui_data.mouse_debug);
 
             glad_glBindVertexArray(quad_vbo.vao);
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
-            gui.render(pixelization);
+            gui.render(gui_data);
             SDL_GL_SwapWindow(window_ctx.window);
         }
     }
