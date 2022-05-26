@@ -27,6 +27,8 @@ void Gui::render(struct GuiData& data) {
     ImGui::Begin("Settings");
     ImGui::SliderFloat("Pixelization", &data.pixelization, 1.0f, 100.0f);
     ImGui::SliderFloat("Mouse Radius", &data.mouse_radius, 0.0f, 1.0f);
+    ImGui::SliderFloat("Mouse Fade In", &data.mouse_fade_in, 0.0f, 1.0f);
+    ImGui::SliderFloat("Mouse Fade Out", &data.mouse_fade_out, 0.0f, 1.0f);
     ImGui::Checkbox("Mouse Debug", &data.mouse_debug);
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",

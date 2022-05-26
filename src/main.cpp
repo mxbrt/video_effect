@@ -71,6 +71,8 @@ int main(int argc, char *argv[]) {
     // gui values
     auto gui_data = GuiData{
         .mouse_radius = 0.15,
+        .mouse_fade_in = 0.1,
+        .mouse_fade_out = 0.1,
         .pixelization = 28.0,
         .mouse_debug = false,
     };
@@ -145,6 +147,12 @@ int main(int argc, char *argv[]) {
             glUniform1f(
                 glGetUniformLocation(mouse_shader.program, "mouseRadius"),
                 gui_data.mouse_radius);
+            glUniform1f(
+                glGetUniformLocation(mouse_shader.program, "mouseFadeIn"),
+                gui_data.mouse_fade_in);
+            glUniform1f(
+                glGetUniformLocation(mouse_shader.program, "mouseFadeOut"),
+                gui_data.mouse_fade_out);
             glad_glBindVertexArray(quad_vbo.vao);
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -166,9 +174,6 @@ int main(int argc, char *argv[]) {
             glUniform2f(
                 glGetUniformLocation(pixelization_shader.program, "resolution"),
                 width, height);
-            glUniform1f(
-                glGetUniformLocation(pixelization_shader.program, "time"),
-                (float)frame);
             glUniform1f(glGetUniformLocation(pixelization_shader.program,
                                              "pixelization"),
                         gui_data.pixelization);

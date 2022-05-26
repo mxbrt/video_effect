@@ -7,6 +7,8 @@
 
 struct GuiData {
   float mouse_radius;
+  float mouse_fade_in;
+  float mouse_fade_out;
   float pixelization;
   bool mouse_debug;
 };

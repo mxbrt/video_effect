@@ -9,6 +9,8 @@ uniform sampler2D mouseTexture;
 uniform vec2 resolution;
 uniform vec3 mouse;
 uniform float mouseRadius;
+uniform float mouseFadeIn;
+uniform float mouseFadeOut;
 
 void main()
 {
@@ -19,8 +21,8 @@ void main()
     vec4 lastColor = texture(mouseTexture, TexCoords);
 
     if (mouseDist < mouseRadius && mouse.z > 0.0) {
-        FragColor = mix(lastColor, vec4(1.0), 0.1);
+        FragColor = mix(lastColor, vec4(1.0), mouseFadeIn);
     } else {
-        FragColor = mix(lastColor, vec4(0.0), 0.1);
+        FragColor = mix(lastColor, vec4(0.0), mouseFadeOut);
     }
 }
