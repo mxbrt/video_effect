@@ -8,6 +8,6 @@
 class Gui {
  public:
   Gui(window_ctx& window_ctx);
-  void process_event(SDL_Event& event);
+  bool process_event(SDL_Event& event);
   void render(float& pixelization);
 };

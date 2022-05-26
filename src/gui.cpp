@@ -13,8 +13,10 @@ Gui::Gui(window_ctx& window_ctx) {
   ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
-void Gui::process_event(SDL_Event& event) {
+bool Gui::process_event(SDL_Event& event) {
   ImGui_ImplSDL2_ProcessEvent(&event);
+  auto io = ImGui::GetIO();
+  return io.WantCaptureMouse;
 }
 
 void Gui::render(float& pixelization) {

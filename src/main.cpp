@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <string>
 
 #include "fbo.h"
@@ -80,7 +81,7 @@ int main(int argc, char *argv[]) {
         SDL_Event event;
         enum player_event player_event = PLAYER_NO_EVENT;
         if (SDL_WaitEvent(&event) != 1) die("event loop error");
-        gui.process_event(event);
+        bool imgui_event = gui.process_event(event);
         switch (event.type) {
             case SDL_QUIT:
                 goto done;
@@ -111,7 +112,7 @@ int main(int argc, char *argv[]) {
             int mouse_click = 0;
             SDL_PumpEvents();  // make sure we have the latest mouse state.
             buttons = SDL_GetMouseState(&x, &y);
-            if ((buttons & SDL_BUTTON_LMASK) != 0) {
+            if ((buttons & SDL_BUTTON_LMASK) != 0 && !imgui_event) {
                 mouse_click = 1;
             }
 
