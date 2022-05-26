@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "fbo.h"
+#include "gui.h"
 #include "player.h"
 #include "shader.h"
 #include "texture.h"
@@ -42,17 +43,21 @@ void parse_args(int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
     parse_args(argc, argv);
-    player_create();
+    struct window_ctx window_ctx;
+    player_create(&window_ctx);
+    auto gui = Gui(window_ctx);
 
     auto pixelization_shader = Shader("shaders/vert.glsl", "shaders/frag.glsl");
     auto mouse_shader = Shader("shaders/vert.glsl", "shaders/mouse.glsl");
 
     auto quad_vbo = Vbo(quadVertices);
-
     // framebuffer configuration
     auto mpv_fbo = Fbo(width, height);
     Fbo mouse_fbo[2] = {Fbo(width, height), Fbo(width, height)};
     int mouse_fbo_idx = 0;
+
+    // gui values
+    float pixelization = 28.0;
 
     // Play this file.
     const char *cmd[] = {"loadfile", opts.media_path, NULL};
@@ -61,6 +66,7 @@ int main(int argc, char *argv[]) {
     while (1) {
         SDL_Event event;
         if (SDL_WaitEvent(&event) != 1) die("event loop error");
+        gui.process_event(event);
         int redraw = 0;
         switch (event.type) {
             case SDL_QUIT:
@@ -75,9 +81,10 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             default:
-                redraw = player_draw(event, mpv_fbo.fbo);
+                redraw = player_draw(&window_ctx, event, mpv_fbo.fbo);
                 break;
         }
+
         if (redraw) {
             int x, y;
             uint32_t buttons;
@@ -134,10 +141,15 @@ int main(int argc, char *argv[]) {
             glUniform1f(
                 glGetUniformLocation(pixelization_shader.program, "time"),
                 (float)frame);
+            glUniform1f(glGetUniformLocation(pixelization_shader.program,
+                                             "pixelization"),
+                        pixelization);
 
             glad_glBindVertexArray(quad_vbo.vao);
             glDrawArrays(GL_TRIANGLES, 0, 6);
-            player_swap_window();
+
+            gui.render(pixelization);
+            SDL_GL_SwapWindow(window_ctx.window);
         }
     }
 done:

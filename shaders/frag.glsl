@@ -8,6 +8,7 @@ in vec2 TexCoords;
 uniform sampler2D movieTexture;
 uniform sampler2D mouseTexture;
 uniform vec2 resolution;
+uniform float pixelization;
 
 void main()
 {
@@ -15,8 +16,7 @@ void main()
     if (mouseVal.x > 0.9) {
         FragColor = texture(movieTexture, TexCoords);
     } else {
-        float blockiness = 28.0;
-        vec2 pixelFactor = resolution * (1.0 / (blockiness - blockiness * mouseVal.x));
+        vec2 pixelFactor = resolution * (1.0 / (pixelization - pixelization * mouseVal.x));
         vec2 coord = round(TexCoords * pixelFactor) / pixelFactor;
         vec4 col = vec4(0);
         for (int i = -1; i < 2; i++) {

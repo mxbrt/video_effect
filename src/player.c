@@ -8,8 +8,6 @@
 static Uint32 wakeup_on_mpv_render_update, wakeup_on_mpv_events;
 static mpv_handle *mpv;
 static mpv_render_context *mpv_gl;
-static SDL_Window *window;
-static SDL_GLContext glcontext;
 
 static void *get_proc_address_mpv(void *fn_ctx, const char *name) {
     return SDL_GL_GetProcAddress(name);
@@ -25,7 +23,7 @@ static void on_mpv_render_update(void *ctx) {
     SDL_PushEvent(&event);
 }
 
-void player_create() {
+void player_create(struct window_ctx *ctx) {
     mpv = mpv_create();
     if (!mpv) die("context init failed");
 
@@ -39,13 +37,23 @@ void player_create() {
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) die("SDL init failed");
 
-    window =
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+    ctx->window =
         SDL_CreateWindow("hi", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                          1920, 1080, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-    if (!window) die("failed to create SDL window");
+    if (!ctx->window) die("failed to create SDL window");
+    ctx->gl = SDL_GL_CreateContext(ctx->window);
+    if (!ctx->gl) die("failed to create SDL GL context");
 
-    glcontext = SDL_GL_CreateContext(window);
-    if (!glcontext) die("failed to create SDL GL context");
+    SDL_GL_MakeCurrent(ctx->window, ctx->gl);
+    SDL_GL_SetSwapInterval(1);  // Enable vsync
 
     gladLoadGL();
 
@@ -98,7 +106,7 @@ void player_cmd(const char *cmd[]) {
     mpv_command_async(mpv, 0, cmd);
 }
 
-int player_draw(SDL_Event event, unsigned int fbo) {
+int player_draw(struct window_ctx *ctx, SDL_Event event, unsigned int fbo) {
     int redraw = 0;
     // Happens when there is new work for the render thread
     // (such as rendering a new video frame or redrawing it).
@@ -129,7 +137,7 @@ int player_draw(SDL_Event event, unsigned int fbo) {
     }
     if (redraw) {
         int w, h;
-        SDL_GetWindowSize(window, &w, &h);
+        SDL_GetWindowSize(ctx->window, &w, &h);
         mpv_render_param params[] = {
             // Specify the default framebuffer (0) as target. This will
             // render onto the entire screen. If you want to show the
@@ -154,7 +162,7 @@ int player_draw(SDL_Event event, unsigned int fbo) {
     return redraw;
 }
 
-void player_swap_window() { SDL_GL_SwapWindow(window); }
+/*void player_swap_window() { SDL_GL_SwapWindow(window); }*/
 
 void player_free() {
     // Destroy the GL renderer and all of the GL objects it allocated. If video

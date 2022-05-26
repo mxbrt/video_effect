@@ -7,12 +7,16 @@ extern "C" {
 
 #include "sdl_gl.h"
 
-void player_create();
+struct window_ctx {
+  SDL_Window *window;
+  SDL_GLContext gl;
+};
+
+void player_create(struct window_ctx *w);
 void player_free();
 
 void player_cmd(const char *cmd[]);
-int player_draw(SDL_Event event, unsigned int fbo);
-void player_swap_window();
+int player_draw(struct window_ctx *w, SDL_Event event, unsigned int fbo);
 
 #ifdef __cplusplus
 }

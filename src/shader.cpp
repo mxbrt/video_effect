@@ -67,10 +67,6 @@ long Shader::max_mtime() {
     return max_mtime;
 }
 
-void shader_create(struct shader *s, const char *vert_shader_path,
-                   const char *frag_shader_path) {
-}
-
 void Shader::reload() {
     long mtime = max_mtime();
     if (mtime > src_mtime) {

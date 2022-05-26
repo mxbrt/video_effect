@@ -3,6 +3,7 @@ project('mpv_glsl', 'c', 'cpp',
 
 sources = [
   'src/fbo.cpp',
+  'src/gui.cpp',
   'src/main.cpp',
   'src/player.c',
   'src/shader.cpp',
@@ -17,8 +18,17 @@ includes = [
 
 thirdparty_sources = [
   'vendor/glad/src/glad.c',
+  'vendor/imgui/src/imgui.cpp',
+  'vendor/imgui/src/imgui_draw.cpp',
+  'vendor/imgui/src/imgui_tables.cpp',
+  'vendor/imgui/src/imgui_widgets.cpp',
+  'vendor/imgui/src/imgui_impl_sdl.cpp',
+  'vendor/imgui/src/imgui_impl_opengl3.cpp',
+]
+
 thirdparty_includes = [
   'vendor/glad/include',
+  'vendor/imgui/include',
 ]
 
 dependencies = [ dependency('sdl2'), dependency('mpv') ]
