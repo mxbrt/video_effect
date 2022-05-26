@@ -1,6 +1,4 @@
-#ifndef VBO_H
-#define VBO_H
-
+#pragma once
 #include <stddef.h>
 
 #include <vector>
@@ -13,4 +11,3 @@ class Vbo {
   unsigned int vao;
   unsigned int vbo;
 };
-#endif  // VBO_H

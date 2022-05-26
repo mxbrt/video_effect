@@ -1,6 +1,4 @@
-#ifndef FBO_H
-#define FBO_H
-
+#pragma once
 #include "texture.h"
 
 class Fbo {
@@ -14,4 +12,3 @@ class Fbo {
  private:
   unsigned int rbo;
 };
-#endif  // FBO_H

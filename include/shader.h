@@ -1,5 +1,4 @@
-#ifndef SHADER_H
-#define SHADER_H
+#pragma once
 #include <string>
 
 #include "sdl_gl.h"
@@ -26,4 +25,3 @@ class Shader {
   };
 
 void shader_reload(struct shader* s);
-#endif  // SHADER_H

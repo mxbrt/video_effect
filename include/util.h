@@ -1,6 +1,4 @@
-#ifndef UTIL_H
-#define UTIL_H
-
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,5 +9,3 @@ void die(const char *format, ...);
 #ifdef __cplusplus
 }
 #endif
-
-#endif  // UTIL_H

@@ -1,6 +1,4 @@
-#ifndef GUI_H
-#define GUI_H
-
+#pragma once
 #include <vector>
 
 #include "imgui.h"
@@ -13,4 +11,3 @@ class Gui {
   void process_event(SDL_Event& event);
   void render(float& pixelization);
 };
-#endif  // GUI_H
