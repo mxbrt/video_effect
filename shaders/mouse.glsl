@@ -21,8 +21,8 @@ void main()
     vec4 lastColor = texture(mouseTexture, TexCoords);
 
     if (mouseDist < mouseRadius && mouse.z > 0.0) {
-        FragColor = mix(lastColor, vec4(1.0), mouseFadeIn);
+        FragColor = mix(lastColor, vec4(1.1), mouseFadeIn * 0.2);
     } else {
-        FragColor = mix(lastColor, vec4(0.0), mouseFadeOut);
+        FragColor = mix(lastColor, vec4(-0.1), mouseFadeOut * 0.2);
     }
 }
