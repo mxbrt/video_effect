@@ -6,15 +6,16 @@
 
 class Shuffler {
  public:
-  Shuffler(const std::string &directory_path);
+  Shuffler(const std::vector<std::string>& directories);
 
   std::string get();
 
  private:
+  void read_directories();
   void shuffle();
 
   size_t cur_idx;
-  std::string directory_path;
+  std::vector<std::string> directories;
   std::vector<std::string> files;
   std::default_random_engine rng;
 };
