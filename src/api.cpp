@@ -27,7 +27,7 @@ void Api::server_run() {
 
   server.Post("/play", [this](const Request& req, Response& res) {
     scoped_lock lock(command_mutex);
-    command = req.body;
+    command = media_path + req.body;
   });
 
   server.listen("localhost", 8000);
