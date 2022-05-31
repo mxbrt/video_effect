@@ -29,8 +29,8 @@ vector<float> quadVertices = {  // vertex attributes for a quad that fills
 
 struct options {
     int shader_reload;
-    string video_path;
-    string image_path;
+    string media_path;
+    string website_path;
 };
 
 static struct options opts = {.shader_reload = 0};
@@ -41,18 +41,18 @@ static const int height = 1080;
 void parse_args(int argc, char *argv[]) {
     for (int opt_idx = 1; opt_idx < argc; opt_idx++) {
         auto arg_str = string(argv[opt_idx]);
-        if (arg_str == "--video-dir") {
+        if (arg_str == "--media-dir") {
             opt_idx++;
             if (opt_idx >= argc) {
                 die("Missing value for option %s\n", arg_str.c_str());
             }
-            opts.video_path = string(argv[opt_idx]);
-        } else if (arg_str == "--image-dir") {
+            opts.media_path = string(argv[opt_idx]);
+        } else if (arg_str == "--website-dir") {
             opt_idx++;
             if (opt_idx >= argc) {
                 die("Missing value for option %s\n", arg_str.c_str());
             }
-            opts.image_path = string(argv[opt_idx]);
+            opts.website_path = string(argv[opt_idx]);
         } else if (arg_str == "--shader-reload") {
             opts.shader_reload = 1;
         } else {
@@ -60,8 +60,8 @@ void parse_args(int argc, char *argv[]) {
         }
     }
 
-    if (opts.video_path.empty() || opts.image_path.empty()) {
-        die("Must specify image & video directory");
+    if (opts.media_path.empty() && opts.website_path.empty()) {
+        die("Must specify media & website directory");
     }
 }
 
@@ -90,7 +90,8 @@ int main(int argc, char *argv[]) {
     };
 
     // Play this file.
-    auto shuffler = Shuffler({opts.video_path, opts.image_path});
+    auto shuffler =
+        Shuffler({opts.media_path + "/video", opts.media_path + "image"});
     auto video_path = shuffler.get();
     const char *cmd[] = {"loadfile", video_path.c_str(), NULL};
     player_cmd(cmd);
@@ -99,7 +100,7 @@ int main(int argc, char *argv[]) {
     uint64_t target_frametime = 1000 / 60;
 
     // Start API server
-    auto api = Api();
+    auto api = Api(opts.media_path, opts.website_path);
 
     while (1) {
         SDL_Event event;

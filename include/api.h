@@ -13,17 +13,21 @@ using namespace std;
 
 class Api {
  public:
-  Api();
+  Api(const string& media_path, const string& website_path);
   ~Api();
   optional<string> get_play_command();
 
  private:
   void server_run();
 
+  const string media_path;
+  const string website_path;
+
   httplib::Server server;
   thread server_thread;
   mutex command_mutex;
   optional<string> command;
+
 };
 
 }  // namespace mpv_glsl
