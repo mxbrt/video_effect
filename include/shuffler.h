@@ -4,18 +4,21 @@
 #include <string>
 #include <vector>
 
+namespace mpv_glsl {
+using namespace std;
 class Shuffler {
  public:
-  Shuffler(const std::vector<std::string>& directories);
+  Shuffler(const vector<string>& directories);
 
-  std::string get();
+  string get();
 
  private:
   void read_directories();
   void shuffle();
 
   size_t cur_idx;
-  std::vector<std::string> directories;
-  std::vector<std::string> files;
-  std::default_random_engine rng;
+  vector<string> directories;
+  vector<string> files;
+  default_random_engine rng;
 };
+}  // namespace mpv_glsl

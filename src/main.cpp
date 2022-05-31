@@ -16,7 +16,10 @@
 #include "util.h"
 #include "vbo.h"
 
-std::vector<float> quadVertices = {  // vertex attributes for a quad that fills
+using namespace mpv_glsl;
+using namespace std;
+
+vector<float> quadVertices = {  // vertex attributes for a quad that fills
                                      // the entire screen in Normalized Device
                                      // Coordinates. positions   // texCoords
     -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f,
@@ -25,8 +28,8 @@ std::vector<float> quadVertices = {  // vertex attributes for a quad that fills
 
 struct options {
     int shader_reload;
-    std::string video_path;
-    std::string image_path;
+    string video_path;
+    string image_path;
 };
 
 static struct options opts = {.shader_reload = 0};
@@ -36,19 +39,19 @@ static const int height = 1080;
 
 void parse_args(int argc, char *argv[]) {
     for (int opt_idx = 1; opt_idx < argc; opt_idx++) {
-        auto arg_str = std::string(argv[opt_idx]);
+        auto arg_str = string(argv[opt_idx]);
         if (arg_str == "--video-dir") {
             opt_idx++;
             if (opt_idx >= argc) {
                 die("Missing value for option %s\n", arg_str.c_str());
             }
-            opts.video_path = std::string(argv[opt_idx]);
+            opts.video_path = string(argv[opt_idx]);
         } else if (arg_str == "--image-dir") {
             opt_idx++;
             if (opt_idx >= argc) {
                 die("Missing value for option %s\n", arg_str.c_str());
             }
-            opts.image_path = std::string(argv[opt_idx]);
+            opts.image_path = string(argv[opt_idx]);
         } else if (arg_str == "--shader-reload") {
             opts.shader_reload = 1;
         } else {

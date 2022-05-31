@@ -6,8 +6,10 @@
 
 #include "util.h"
 
-Shader::Shader(const std::string &vert_shader_path,
-               const std::string &frag_shader_path)
+namespace mpv_glsl {
+using namespace std;
+Shader::Shader(const string &vert_shader_path,
+               const string &frag_shader_path)
     : frag_path(frag_shader_path), vert_path(vert_shader_path) {
     init();
 }
@@ -38,13 +40,13 @@ void Shader::init() {
     src_mtime = max_mtime();
 }
 
-int Shader::compile(const std::string &path, int type) {
-    std::ifstream ifs(path);
+int Shader::compile(const string &path, int type) {
+    ifstream ifs(path);
     if (ifs.fail()) {
         die("Could not open file %s %s\n", path.c_str(), strerror(errno));
     }
-    std::string shader_src((std::istreambuf_iterator<char>(ifs)),
-                           (std::istreambuf_iterator<char>()));
+    string shader_src((istreambuf_iterator<char>(ifs)),
+                           (istreambuf_iterator<char>()));
 
     unsigned int shader = glCreateShader(type);
     int success;
@@ -74,3 +76,4 @@ void Shader::reload() {
         init();
     }
 }
+}  // namespace mpv_glsl

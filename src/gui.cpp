@@ -4,6 +4,7 @@
 
 #include "gui.h"
 
+namespace mpv_glsl {
 Gui::Gui(window_ctx& window_ctx) {
   const char* glsl_version = "#version 130";
   IMGUI_CHECKVERSION();
@@ -39,3 +40,4 @@ void Gui::render(struct GuiData& data) {
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
+}  // namespace mpv_glsl

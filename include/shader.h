@@ -3,10 +3,12 @@
 
 #include "sdl_gl.h"
 
+namespace mpv_glsl {
+using namespace std;
 class Shader {
  public:
-  Shader(const std::string& vert_shader_path,
-                 const std::string& frag_shader_path);
+  Shader(const string& vert_shader_path,
+                 const string& frag_shader_path);
   ~Shader();
   void reload();
 
@@ -14,14 +16,15 @@ class Shader {
  private:
   void init();
   void deinit();
-  int compile(const std::string& path, int type);
+  int compile(const string& path, int type);
   long max_mtime();
 
   int frag;
   int vert;
-  std::string frag_path;
-  std::string vert_path;
+  string frag_path;
+  string vert_path;
   int src_mtime;
   };
 
 void shader_reload(struct shader* s);
+}  // namespace mpv_glsl

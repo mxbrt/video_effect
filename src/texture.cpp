@@ -4,6 +4,7 @@
 #include "texture.h"
 #include "util.h"
 
+namespace mpv_glsl {
 Texture::Texture(int width, int height) {
   glGenTextures(1, &id);
   glBindTexture(GL_TEXTURE_2D, id);
@@ -14,3 +15,4 @@ Texture::Texture(int width, int height) {
 }
 
 Texture::~Texture() { glDeleteTextures(1, &id); }
+}  // namespace mpv_glsl

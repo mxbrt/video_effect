@@ -4,6 +4,7 @@
 #include "texture.h"
 #include "util.h"
 
+namespace mpv_glsl {
 Fbo::Fbo(int width, int height) : texture(Texture(width, height)) {
   glGenFramebuffers(1, &fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -28,3 +29,4 @@ Fbo::~Fbo() {
   glDeleteRenderbuffers(1, &rbo);
   glDeleteFramebuffers(1, &fbo);
 }
+}  // namespace mpv_glsl

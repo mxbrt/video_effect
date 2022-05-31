@@ -6,12 +6,13 @@
 
 #include "util.h"
 
-namespace fs = std::filesystem;
+namespace mpv_glsl {
+using namespace std;
 
-Shuffler::Shuffler(const std::vector<std::string>& directories)
+Shuffler::Shuffler(const vector<string>& directories)
     : cur_idx(0), directories(directories) {
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    rng = std::default_random_engine{seed};
+    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+    rng = default_random_engine{seed};
     read_directories();
     shuffle();
 }
@@ -19,7 +20,7 @@ Shuffler::Shuffler(const std::vector<std::string>& directories)
 void Shuffler::read_directories() {
     files.clear();
     for (const auto& directory : directories) {
-        for (const auto& f : fs::directory_iterator(directory)) {
+        for (const auto& f : filesystem::directory_iterator(directory)) {
             files.push_back(f.path());
         }
         if (files.size() == 0) {
@@ -28,11 +29,9 @@ void Shuffler::read_directories() {
     }
 }
 
-void Shuffler::shuffle() {
-    std::shuffle(std::begin(files), std::end(files), rng);
-}
+void Shuffler::shuffle() { mpv_glsl::shuffle(begin(files), end(files), rng); }
 
-std::string Shuffler::get() {
+string Shuffler::get() {
     auto result = files[cur_idx];
     cur_idx++;
     if (cur_idx >= files.size()) {
@@ -42,4 +41,4 @@ std::string Shuffler::get() {
     }
     return result;
 }
-
+}  // namespace mpv_glsl
