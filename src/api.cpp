@@ -1,5 +1,9 @@
 #include "api.h"
 
+#include <cstdio>
+
+#include "util.h"
+
 namespace mpv_glsl {
 using namespace std;
 using namespace httplib;
@@ -10,6 +14,10 @@ Api::~Api() {
 }
 
 void Api::server_run() {
+  if (!server.set_mount_point("/", "/home/max/projects/sendprotest/map")) {
+    die("Failed to start file server\n");
+  }
+
   server.Post("/play", [this](const Request& req, Response& res) {
     scoped_lock lock(command_mutex);
     command = req.body;
