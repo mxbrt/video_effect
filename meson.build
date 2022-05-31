@@ -2,6 +2,7 @@ project('mpv_glsl', 'c', 'cpp',
         default_options : ['c_std=c11', 'cpp_std=c++20'])
 
 sources = [
+  'src/api.cpp',
   'src/fbo.cpp',
   'src/gui.cpp',
   'src/main.cpp',
@@ -30,6 +31,7 @@ thirdparty_sources = [
 thirdparty_includes = [
   'vendor/glad/include',
   'vendor/imgui/include',
+  'vendor/cpp-httplib'
 ]
 
 dependencies = [ dependency('sdl2'), dependency('mpv') ]

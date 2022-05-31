@@ -1,11 +1,12 @@
-#include <cstdint>
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <cstdint>
 #include <string>
 
+#include "api.h"
 #include "fbo.h"
 #include "gui.h"
 #include "imgui_impl_sdl.h"
@@ -97,6 +98,9 @@ int main(int argc, char *argv[]) {
     uint64_t last_render = SDL_GetTicks64();
     uint64_t target_frametime = 1000 / 60;
 
+    // Start API server
+    auto api = Api();
+
     while (1) {
         SDL_Event event;
         enum player_event player_event = PLAYER_NO_EVENT;
@@ -120,7 +124,11 @@ int main(int argc, char *argv[]) {
                 break;
         }
 
-        if (player_event == PLAYER_IDLE) {
+        auto play_command = api.get_play_command();
+        if (play_command) {
+            const char *cmd[] = {"loadfile", play_command->c_str(), NULL};
+            player_cmd(cmd);
+        } else if (player_event == PLAYER_IDLE) {
             auto media_path = shuffler.get();
             const char *cmd[] = {"loadfile", media_path.c_str(), NULL};
             player_cmd(cmd);
