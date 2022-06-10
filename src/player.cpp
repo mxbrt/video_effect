@@ -1,32 +1,36 @@
-#include <SDL_video.h>
-#include <mpv/client.h>
-#include <mpv/render_gl.h>
-
-#include "util.h"
 #include "player.h"
 
-static Uint32 wakeup_on_mpv_render_update, wakeup_on_mpv_events;
-static mpv_handle *mpv;
-static mpv_render_context *mpv_gl;
+#include <SDL_video.h>
+#include <mpv/client.h>
+#include <mpv/render.h>
+#include <mpv/render_gl.h>
+
+#include <cstdint>
+
+#include "SDL_stdinc.h"
+#include "util.h"
+namespace mpv_glsl {
+
+static uint32_t wakeup_on_mpv_render_update;
+static uint32_t wakeup_on_mpv_events;
 
 static void *get_proc_address_mpv(void *fn_ctx, const char *name) {
     return SDL_GL_GetProcAddress(name);
 }
 
-static void on_mpv_events(void *ctx) {
+static void on_mpv_events(void *) {
     SDL_Event event = {.type = wakeup_on_mpv_events};
     SDL_PushEvent(&event);
 }
 
-static void on_mpv_render_update(void *ctx) {
+static void on_mpv_render_update(void *) {
     SDL_Event event = {.type = wakeup_on_mpv_render_update};
     SDL_PushEvent(&event);
 }
 
-void player_create(struct window_ctx *ctx) {
+Player::Player(struct window_ctx *ctx) {
     mpv = mpv_create();
     if (!mpv) die("context init failed");
-
     // Some minor options can only be set before mpv_initialize().
     if (mpv_initialize(mpv) < 0) die("mpv init failed");
 
@@ -37,8 +41,11 @@ void player_create(struct window_ctx *ctx) {
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) die("SDL init failed");
 
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(
+        SDL_GL_CONTEXT_FLAGS,
+        SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);  // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                        SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -56,13 +63,14 @@ void player_create(struct window_ctx *ctx) {
     SDL_GL_SetSwapInterval(1);  // Enable vsync
 
     gladLoadGL();
+    mpv_opengl_init_params opengl_params = {
+        .get_proc_address = get_proc_address_mpv,
+    };
+    int advanced_control_param = 1;
 
     mpv_render_param params[] = {
-        {MPV_RENDER_PARAM_API_TYPE, MPV_RENDER_API_TYPE_OPENGL},
-        {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS,
-         &(mpv_opengl_init_params){
-             .get_proc_address = get_proc_address_mpv,
-         }},
+        {MPV_RENDER_PARAM_API_TYPE, (void *)MPV_RENDER_API_TYPE_OPENGL},
+        {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &opengl_params},
         // Tell libmpv that you will call mpv_render_context_update() on
         // render context update callbacks, and that you will _not_ block
         // on the core ever (see <libmpv/render.h> "Threading" section for
@@ -72,8 +80,8 @@ void player_create(struct window_ctx *ctx) {
         // If you want to use synchronous calls, either make them on a
         // separate thread, or remove the option below (this will disable
         // features like DR and is not recommended anyway).
-        {MPV_RENDER_PARAM_ADVANCED_CONTROL, &(int){1}},
-        {0}};
+        {MPV_RENDER_PARAM_ADVANCED_CONTROL, &advanced_control_param},
+        {MPV_RENDER_PARAM_INVALID, NULL}};
 
     // This makes mpv use the currently set GL context. It will use the
     // callback (passed via params) to resolve GL builtin functions, as well
@@ -104,12 +112,15 @@ void player_create(struct window_ctx *ctx) {
     mpv_set_property_string(mpv, "image-display-duration", "15");
 }
 
-void player_cmd(const char *cmd[]) {
-    mpv_command_async(mpv, 0, cmd);
+Player::~Player() {
+    mpv_render_context_free(mpv_gl);
+    mpv_detach_destroy(mpv);
 }
 
-enum player_event player_run(struct window_ctx *ctx, SDL_Event event,
-                             unsigned int fbo) {
+void Player::cmd(const char **cmd) { mpv_command_async(mpv, 0, cmd); }
+
+enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
+                              unsigned int fbo) {
     enum player_event result = PLAYER_NO_EVENT;
     // Happens when there is new work for the render thread
     // (such as rendering a new video frame or redrawing it).
@@ -125,7 +136,8 @@ enum player_event player_run(struct window_ctx *ctx, SDL_Event event,
             mpv_event *mp_event = mpv_wait_event(mpv, 0);
             if (mp_event->event_id == MPV_EVENT_NONE) break;
             if (mp_event->event_id == MPV_EVENT_LOG_MESSAGE) {
-                mpv_event_log_message *msg = mp_event->data;
+                mpv_event_log_message *msg =
+                    (mpv_event_log_message *)mp_event->data;
                 // Print log messages about DR allocations, just
                 // to test whether it works. If there is more
                 // than 1 of these, it works. (The log message
@@ -144,28 +156,22 @@ enum player_event player_run(struct window_ctx *ctx, SDL_Event event,
     if (result == PLAYER_REDRAW) {
         int w, h;
         SDL_GetWindowSize(ctx->window, &w, &h);
-        mpv_render_param params[] = {
-            {MPV_RENDER_PARAM_OPENGL_FBO,
-             &(mpv_opengl_fbo){
-                 .fbo = fbo,
-                 .w = w,
-                 .h = h,
-             }},
-            // Flip rendering (needed due to flipped GL coordinate
-            // system).
-            {MPV_RENDER_PARAM_FLIP_Y, &(int){1}},
-            {0}};
+
+        mpv_opengl_fbo mpv_fbo = {
+            .fbo = (int)fbo,
+            .w = w,
+            .h = h,
+        };
+        int mpv_flip_y = 1;
+        mpv_render_param params[] = {{MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
+                                     // Flip rendering (needed due to
+                                     // flipped GL coordinate system).
+                                     {MPV_RENDER_PARAM_FLIP_Y, &mpv_flip_y},
+                                     {MPV_RENDER_PARAM_INVALID, NULL}};
         // See render_gl.h on what OpenGL environment mpv expects, and
         // other API details.
         mpv_render_context_render(mpv_gl, params);
     }
     return result;
 }
-
-void player_free() {
-    // Destroy the GL renderer and all of the GL objects it allocated. If video
-    // is still running, the video track will be deselected.
-    mpv_render_context_free(mpv_gl);
-    mpv_detach_destroy(mpv);
-}
-
+}  // namespace mpv_glsl

@@ -1,31 +1,32 @@
-#ifndef PLAYER_H
-#define PLAYER_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#pragma once
+#include <mpv/client.h>
+#include <mpv/render_gl.h>
 #include "sdl_gl.h"
 
+namespace mpv_glsl {
+
 struct window_ctx {
-  SDL_Window *window;
-  SDL_GLContext gl;
+    SDL_Window *window;
+    SDL_GLContext gl;
 };
 
 enum player_event {
-  PLAYER_REDRAW,
-  PLAYER_IDLE,
-  PLAYER_NO_EVENT,
+    PLAYER_REDRAW,
+    PLAYER_IDLE,
+    PLAYER_NO_EVENT,
 };
 
-void player_create(struct window_ctx *w);
-void player_free();
+class Player {
+   public:
+    Player(struct window_ctx *ctx);
+    ~Player();
 
-void player_cmd(const char *cmd[]);
-enum player_event player_run(struct window_ctx *w, SDL_Event event,
-                             unsigned int fbo);
+    void cmd(const char **cmd);
+    enum player_event run(struct window_ctx *ctx, SDL_Event event,
+                          unsigned int fbo);
 
-#ifdef __cplusplus
-}
-#endif
-#endif  // PLAYER_H
+   private:
+    mpv_handle *mpv;
+    mpv_render_context *mpv_gl;
+};
+}  // namespace mpv_glsl

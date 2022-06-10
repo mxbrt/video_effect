@@ -77,7 +77,7 @@ void parse_args(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
     parse_args(argc, argv);
     struct window_ctx window_ctx;
-    player_create(&window_ctx);
+    auto player = Player(&window_ctx);
     auto gui = Gui(window_ctx);
 
     auto pixelization_shader = Shader("shaders/vert.glsl", "shaders/frag.glsl");
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
         Shuffler({opts.media_path + "video", opts.media_path + "image"});
     auto video_path = shuffler.get();
     const char *cmd[] = {"loadfile", video_path.c_str(), NULL};
-    player_cmd(cmd);
+    player.cmd(cmd);
 
     uint64_t last_render = SDL_GetTicks64();
     uint64_t target_frametime = 1000 / 60;
@@ -126,11 +126,11 @@ int main(int argc, char *argv[]) {
             case SDL_KEYDOWN:
                 if (event.key.keysym.sym == SDLK_SPACE) {
                     const char *cmd_pause[] = {"cycle", "pause", NULL};
-                    player_cmd(cmd_pause);
+                    player.cmd(cmd_pause);
                 }
                 break;
             default:
-                player_event = player_run(&window_ctx, event, mpv_fbo.fbo);
+                player_event = player.run(&window_ctx, event, mpv_fbo.fbo);
                 break;
         }
 
@@ -139,11 +139,11 @@ int main(int argc, char *argv[]) {
         auto play_command = api.get_play_cmd();
         if (play_command) {
             const char *cmd[] = {"loadfile", play_command->c_str(), NULL};
-            player_cmd(cmd);
+            player.cmd(cmd);
         } else if (player_event == PLAYER_IDLE) {
             auto media_path = shuffler.get();
             const char *cmd[] = {"loadfile", media_path.c_str(), NULL};
-            player_cmd(cmd);
+            player.cmd(cmd);
             api.set_play_cmd(media_path.c_str());
         }
 
@@ -256,7 +256,5 @@ int main(int argc, char *argv[]) {
         }
     }
 done:
-
-    player_free();
     return 0;
 }
