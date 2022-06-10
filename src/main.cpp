@@ -68,6 +68,10 @@ void parse_args(int argc, char *argv[]) {
     if (opts.media_path.empty() && opts.website_path.empty()) {
         die("Must specify media & website directory");
     }
+
+    if (!opts.media_path.ends_with("/")) {
+        opts.media_path = opts.media_path + "/";
+    }
 }
 
 int main(int argc, char *argv[]) {
