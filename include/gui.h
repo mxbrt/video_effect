@@ -7,11 +7,11 @@
 
 namespace mpv_glsl {
 struct GuiData {
-  float mouse_radius;
-  float mouse_fade_in;
-  float mouse_fade_out;
+  float finger_radius;
+  float effect_fade_in;
+  float effect_fade_out;
   float pixelization;
-  bool mouse_debug;
+  bool input_debug;
 };
 
 class Gui {

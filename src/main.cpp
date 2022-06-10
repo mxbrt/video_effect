@@ -1,10 +1,10 @@
-#include <cstring>
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <cstdint>
+#include <cstring>
 #include <string>
 
 #include "SDL_events.h"
@@ -19,6 +19,8 @@
 #include "texture.h"
 #include "util.h"
 #include "vbo.h"
+
+const int N_FINGERS = 10;
 
 using namespace mpv_glsl;
 using namespace std;
@@ -75,21 +77,21 @@ int main(int argc, char *argv[]) {
     auto gui = Gui(window_ctx);
 
     auto pixelization_shader = Shader("shaders/vert.glsl", "shaders/frag.glsl");
-    auto mouse_shader = Shader("shaders/vert.glsl", "shaders/mouse.glsl");
+    auto input_shader = Shader("shaders/vert.glsl", "shaders/input.glsl");
 
     auto quad_vbo = Vbo(quadVertices);
     // framebuffer configuration
     auto mpv_fbo = Fbo(width, height);
-    Fbo mouse_fbo[2] = {Fbo(width, height), Fbo(width, height)};
-    int mouse_fbo_idx = 0;
+    Fbo effect_fbo[2] = {Fbo(width, height), Fbo(width, height)};
+    int effect_fbo_idx = 0;
 
     // gui values
     auto gui_data = GuiData{
-        .mouse_radius = 0.15,
-        .mouse_fade_in = 0.1,
-        .mouse_fade_out = 0.1,
+        .finger_radius = 0.15,
+        .effect_fade_in = 0.1,
+        .effect_fade_out = 0.1,
         .pixelization = 28.0,
-        .mouse_debug = false,
+        .input_debug = false,
     };
 
     // Play this file.
@@ -146,14 +148,23 @@ int main(int argc, char *argv[]) {
 
         if (player_event == PLAYER_REDRAW || render_delta >= target_frametime) {
             last_render = ticks;
-            int x = 0, y = 0;
             uint32_t buttons;
-            int mouse_click = 0;
-            SDL_PumpEvents();  // make sure we have the latest mouse state.
+            SDL_PumpEvents();  // make sure we have the latest input state.
+            float fingers_uniform[N_FINGERS][3] = {};
+            for (int i = 0; i < N_FINGERS; i++) {
+                // We initialize the z value to a high value. It will be set to
+                // zero, if a click or touch is active. Consequently, finger
+                // positions that are not active will have a very high distance
+                // to the xy plane.
+                fingers_uniform[i][2] = 1000000;
+            }
             if (!imgui_event) {
-                buttons = SDL_GetMouseState(&x, &y);
+                int mouse_x = 0, mouse_y = 0;
+                buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
                 if ((buttons & SDL_BUTTON_LMASK) != 0) {
-                    mouse_click = 1;
+                    fingers_uniform[0][0] = mouse_x;
+                    fingers_uniform[0][1] = height - mouse_y;
+                    fingers_uniform[0][2] = 0.0;
                 }
 
                 if (SDL_GetNumTouchDevices() > 0) {
@@ -161,50 +172,50 @@ int main(int argc, char *argv[]) {
                     if (touch_id == 0) {
                         die("Invalid touch device\n");
                     }
-                    int n_fingers = SDL_GetNumTouchFingers(touch_id);
-                    if (n_fingers > 0) {
-                        auto finger = SDL_GetTouchFinger(touch_id, 0);
+                    int n_touch_fingers = SDL_GetNumTouchFingers(touch_id);
+                    for (int i = 0; i < n_touch_fingers; i++) {
+                        auto finger = SDL_GetTouchFinger(touch_id, i);
                         if (finger == NULL) {
                             die("Failed to get finger\n");
                         }
-                        mouse_click = 1;
-                        x = finger->x * width;
-                        y = finger->y * height;
+                        fingers_uniform[i][0] = finger->x * width;
+                        fingers_uniform[i][1] = height - finger->y * height;
+                        fingers_uniform[i][2] = 0.0;
                     }
                 }
             }
 
             if (opts.shader_reload) {
                 pixelization_shader.reload();
-                mouse_shader.reload();
+                input_shader.reload();
             }
 
-            auto &last_mouse_fbo = mouse_fbo[mouse_fbo_idx];
-            auto &cur_mouse_fbo = mouse_fbo[(mouse_fbo_idx + 1) % 2];
-            mouse_fbo_idx = (mouse_fbo_idx + 1) % 2;
+            auto &last_effect_fbo = effect_fbo[effect_fbo_idx];
+            auto &cur_effect_fbo = effect_fbo[(effect_fbo_idx + 1) % 2];
+            effect_fbo_idx = (effect_fbo_idx + 1) % 2;
 
-            glUseProgram(mouse_shader.program);
+            glUseProgram(input_shader.program);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, last_mouse_fbo.texture.id);
-            glBindFramebuffer(GL_FRAMEBUFFER, cur_mouse_fbo.fbo);
+            glBindTexture(GL_TEXTURE_2D, last_effect_fbo.texture.id);
+            glBindFramebuffer(GL_FRAMEBUFFER, cur_effect_fbo.fbo);
             glDisable(GL_DEPTH_TEST);
 
             glUniform1i(
-                glGetUniformLocation(mouse_shader.program, "mouseTexture"), 0);
+                glGetUniformLocation(input_shader.program, "effectTexture"), 0);
             glUniform2f(
-                glGetUniformLocation(mouse_shader.program, "resolution"), width,
+                glGetUniformLocation(input_shader.program, "resolution"), width,
                 height);
-            glUniform3f(glGetUniformLocation(mouse_shader.program, "mouse"), x,
-                        height - y, mouse_click);
+            glUniform3fv(glGetUniformLocation(input_shader.program, "fingers"),
+                         N_FINGERS, &fingers_uniform[0][0]);
             glUniform1f(
-                glGetUniformLocation(mouse_shader.program, "mouseRadius"),
-                gui_data.mouse_radius);
+                glGetUniformLocation(input_shader.program, "fingerRadius"),
+                gui_data.finger_radius);
             glUniform1f(
-                glGetUniformLocation(mouse_shader.program, "mouseFadeIn"),
-                gui_data.mouse_fade_in);
+                glGetUniformLocation(input_shader.program, "effectFadeIn"),
+                gui_data.effect_fade_in);
             glUniform1f(
-                glGetUniformLocation(mouse_shader.program, "mouseFadeOut"),
-                gui_data.mouse_fade_out);
+                glGetUniformLocation(input_shader.program, "effectFadeOut"),
+                gui_data.effect_fade_out);
             glad_glBindVertexArray(quad_vbo.vao);
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -212,7 +223,7 @@ int main(int argc, char *argv[]) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, mpv_fbo.texture.id);
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, cur_mouse_fbo.texture.id);
+            glBindTexture(GL_TEXTURE_2D, cur_effect_fbo.texture.id);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glDisable(GL_DEPTH_TEST);
             glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -221,7 +232,7 @@ int main(int argc, char *argv[]) {
                                              "movieTexture"),
                         0);
             glUniform1i(glGetUniformLocation(pixelization_shader.program,
-                                             "mouseTexture"),
+                                             "effectTexture"),
                         1);
             glUniform2f(
                 glGetUniformLocation(pixelization_shader.program, "resolution"),
@@ -230,8 +241,8 @@ int main(int argc, char *argv[]) {
                                              "pixelization"),
                         gui_data.pixelization);
             glUniform1i(
-                glGetUniformLocation(pixelization_shader.program, "mouseDebug"),
-                gui_data.mouse_debug);
+                glGetUniformLocation(pixelization_shader.program, "inputDebug"),
+                gui_data.input_debug);
 
             glad_glBindVertexArray(quad_vbo.vao);
             glDrawArrays(GL_TRIANGLES, 0, 6);
