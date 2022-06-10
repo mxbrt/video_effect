@@ -1,3 +1,4 @@
+#include <cstring>
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -6,6 +7,8 @@
 #include <cstdint>
 #include <string>
 
+#include "SDL_events.h"
+#include "SDL_touch.h"
 #include "api.h"
 #include "fbo.h"
 #include "gui.h"
@@ -102,11 +105,11 @@ int main(int argc, char *argv[]) {
     // Start API server
     auto api = Api(opts.media_path, opts.website_path);
 
+    // Touch event state
     while (1) {
         SDL_Event event;
         enum player_event player_event = PLAYER_NO_EVENT;
         SDL_WaitEventTimeout(&event, target_frametime);
-        bool imgui_event = gui.process_event(event);
         switch (event.type) {
             case SDL_QUIT:
                 goto done;
@@ -125,6 +128,8 @@ int main(int argc, char *argv[]) {
                 break;
         }
 
+        bool imgui_event = gui.process_event(event);
+
         auto play_command = api.get_play_command();
         if (play_command) {
             const char *cmd[] = {"loadfile", play_command->c_str(), NULL};
@@ -140,13 +145,32 @@ int main(int argc, char *argv[]) {
 
         if (player_event == PLAYER_REDRAW || render_delta >= target_frametime) {
             last_render = ticks;
-            int x, y;
+            int x = 0, y = 0;
             uint32_t buttons;
             int mouse_click = 0;
             SDL_PumpEvents();  // make sure we have the latest mouse state.
-            buttons = SDL_GetMouseState(&x, &y);
-            if ((buttons & SDL_BUTTON_LMASK) != 0 && !imgui_event) {
-                mouse_click = 1;
+            if (!imgui_event) {
+                buttons = SDL_GetMouseState(&x, &y);
+                if ((buttons & SDL_BUTTON_LMASK) != 0) {
+                    mouse_click = 1;
+                }
+
+                if (SDL_GetNumTouchDevices() > 0) {
+                    int touch_id = SDL_GetTouchDevice(0);
+                    if (touch_id == 0) {
+                        die("Invalid touch device\n");
+                    }
+                    int n_fingers = SDL_GetNumTouchFingers(touch_id);
+                    if (n_fingers > 0) {
+                        auto finger = SDL_GetTouchFinger(touch_id, 0);
+                        if (finger == NULL) {
+                            die("Failed to get finger\n");
+                        }
+                        mouse_click = 1;
+                        x = finger->x * width;
+                        y = finger->y * height;
+                    }
+                }
             }
 
             if (opts.shader_reload) {
