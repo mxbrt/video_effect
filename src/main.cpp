@@ -26,8 +26,8 @@ using namespace mpv_glsl;
 using namespace std;
 
 vector<float> quadVertices = {  // vertex attributes for a quad that fills
-                                     // the entire screen in Normalized Device
-                                     // Coordinates. positions   // texCoords
+                                // the entire screen in Normalized Device
+                                // Coordinates. positions   // texCoords
     -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f,
 
     -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f};
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
             gui.render(gui_data);
             SDL_GL_SwapWindow(window_ctx.window);
         }
-        }
+    }
 done:
 
     player_free();
