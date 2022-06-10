@@ -1,6 +1,7 @@
 #include "api.h"
 
 #include <cstdio>
+#include <optional>
 
 #include "util.h"
 
@@ -21,22 +22,38 @@ void Api::server_run() {
     die("Failed to start file server\n");
   }
 
-  if (!server.set_mount_point("/media/", media_path)) {
+  if (!server.set_mount_point("/media", media_path)) {
     die("Failed to start file server\n");
   }
 
   server.Post("/play", [this](const Request& req, Response& res) {
     scoped_lock lock(command_mutex);
+    command_pending = true;
     command = media_path + req.body;
+  });
+
+  server.Get("/play", [this](const Request& req, Response& res) {
+    scoped_lock lock(command_mutex);
+    res.body = command.substr(media_path.size());
   });
 
   server.listen("localhost", 8000);
 }
 
-optional<string> Api::get_play_command() {
+void Api::set_play_cmd(const string& cmd) {
   scoped_lock lock(command_mutex);
-  auto command_copy = command;
-  command = std::nullopt;
-  return command_copy;
+  if (!command_pending) {
+    command = cmd;
+  }
+}
+
+optional<string> Api::get_play_cmd() {
+  scoped_lock lock(command_mutex);
+  if (command_pending) {
+    command_pending = false;
+    return command;
+  } else {
+    return std::nullopt;
+  }
 }
 }  // namespace mpv_glsl

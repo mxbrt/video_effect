@@ -15,7 +15,8 @@ class Api {
  public:
   Api(const string& media_path, const string& website_path);
   ~Api();
-  optional<string> get_play_command();
+  optional<string> get_play_cmd();
+  void set_play_cmd(const string& cmd);
 
  private:
   void server_run();
@@ -26,8 +27,8 @@ class Api {
   httplib::Server server;
   thread server_thread;
   mutex command_mutex;
-  optional<string> command;
-
+  string command;
+  bool command_pending;
 };
 
 }  // namespace mpv_glsl

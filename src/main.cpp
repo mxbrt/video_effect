@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 
         bool imgui_event = gui.process_event(event);
 
-        auto play_command = api.get_play_command();
+        auto play_command = api.get_play_cmd();
         if (play_command) {
             const char *cmd[] = {"loadfile", play_command->c_str(), NULL};
             player_cmd(cmd);
@@ -138,6 +138,7 @@ int main(int argc, char *argv[]) {
             auto media_path = shuffler.get();
             const char *cmd[] = {"loadfile", media_path.c_str(), NULL};
             player_cmd(cmd);
+            api.set_play_cmd(media_path.c_str());
         }
 
         uint64_t ticks = SDL_GetTicks64();
