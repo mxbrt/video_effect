@@ -7,6 +7,7 @@
 
 #include <cstdint>
 
+#include "SDL_hints.h"
 #include "SDL_stdinc.h"
 #include "SDL_timer.h"
 #include "util.h"
@@ -39,6 +40,7 @@ Player::Player(struct window_ctx *ctx) {
 
     // Jesus Christ SDL, you suck!
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "no");
+    SDL_SetHint(SDL_HINT_MOUSE_AUTO_CAPTURE, "0");
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) die("SDL init failed");
 
