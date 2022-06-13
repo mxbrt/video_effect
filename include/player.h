@@ -1,6 +1,7 @@
 #pragma once
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
+#include <sys/types.h>
 #include "sdl_gl.h"
 
 namespace mpv_glsl {
@@ -11,7 +12,6 @@ struct window_ctx {
 };
 
 enum player_event {
-    PLAYER_REDRAW,
     PLAYER_IDLE,
     PLAYER_NO_EVENT,
 };
@@ -23,7 +23,7 @@ class Player {
 
     void cmd(const char **cmd);
     enum player_event run(struct window_ctx *ctx, SDL_Event event,
-                          unsigned int fbo);
+                          unsigned int fbo, uint64_t &draw_target_tick);
 
    private:
     mpv_handle *mpv;

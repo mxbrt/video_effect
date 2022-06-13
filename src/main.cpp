@@ -8,6 +8,7 @@
 #include <string>
 
 #include "SDL_events.h"
+#include "SDL_timer.h"
 #include "SDL_touch.h"
 #include "api.h"
 #include "fbo.h"
@@ -85,9 +86,10 @@ int main(int argc, char *argv[]) {
 
     auto quad_vbo = Vbo(quadVertices);
     // framebuffer configuration
-    auto mpv_fbo = Fbo(width, height);
+    Fbo mpv_fbo[2] = {Fbo(width, height), Fbo(width, height)};
     Fbo effect_fbo[2] = {Fbo(width, height), Fbo(width, height)};
     int effect_fbo_idx = 0;
+    int mpv_fbo_idx = 0;
 
     // gui values
     auto gui_data = GuiData{
@@ -100,28 +102,33 @@ int main(int argc, char *argv[]) {
 
     // Play this file.
     auto shuffler =
-        Shuffler({opts.media_path + "video", opts.media_path + "image"});
+        Shuffler({opts.media_path + "video", opts.media_path + "video"});
     auto video_path = shuffler.get();
     const char *cmd[] = {"loadfile", video_path.c_str(), NULL};
     player.cmd(cmd);
 
-    uint64_t last_render = SDL_GetTicks64();
     uint64_t target_frametime = 1000 / 60;
+    uint64_t render_target_tick = SDL_GetTicks64();
+    uint64_t player_target_tick = 0;
 
     // Start API server
     auto api = Api(opts.media_path, opts.website_path);
 
     // Touch event state
     while (1) {
+        auto &cur_mpv_fbo = mpv_fbo[mpv_fbo_idx];
+        auto &next_mpv_fbo = mpv_fbo[(mpv_fbo_idx + 1) % 2];
+        bool window_exposed = false;
+
         SDL_Event event;
         enum player_event player_event = PLAYER_NO_EVENT;
-        SDL_WaitEventTimeout(&event, target_frametime);
         switch (event.type) {
             case SDL_QUIT:
                 goto done;
             case SDL_WINDOWEVENT:
-                if (event.window.event == SDL_WINDOWEVENT_EXPOSED)
-                    player_event = PLAYER_REDRAW;
+                if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
+                    window_exposed = true;
+                }
                 break;
             case SDL_KEYDOWN:
                 if (event.key.keysym.sym == SDLK_SPACE) {
@@ -130,7 +137,8 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             default:
-                player_event = player.run(&window_ctx, event, mpv_fbo.fbo);
+                player_event = player.run(&window_ctx, event, next_mpv_fbo.fbo,
+                                          player_target_tick);
                 break;
         }
 
@@ -148,10 +156,16 @@ int main(int argc, char *argv[]) {
         }
 
         uint64_t ticks = SDL_GetTicks64();
-        uint64_t render_delta = (ticks - last_render);
 
-        if (player_event == PLAYER_REDRAW || render_delta >= target_frametime) {
-            last_render = ticks;
+        if (ticks > player_target_tick) {
+            player_target_tick = player_target_tick + 1000000;
+            mpv_fbo_idx = (mpv_fbo_idx + 1) % 2;
+            cur_mpv_fbo = mpv_fbo[mpv_fbo_idx];
+            next_mpv_fbo = mpv_fbo[(mpv_fbo_idx + 1) % 2];
+        }
+
+        if (ticks > render_target_tick || window_exposed) {
+            render_target_tick = ticks + target_frametime;
             uint32_t buttons;
             SDL_PumpEvents();  // make sure we have the latest input state.
             float fingers_uniform[N_FINGERS][3] = {};
@@ -225,7 +239,7 @@ int main(int argc, char *argv[]) {
 
             glUseProgram(pixelization_shader.program);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, mpv_fbo.texture.id);
+            glBindTexture(GL_TEXTURE_2D, cur_mpv_fbo.texture.id);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, cur_effect_fbo.texture.id);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -254,6 +268,17 @@ int main(int argc, char *argv[]) {
             gui.render(gui_data);
             SDL_GL_SwapWindow(window_ctx.window);
         }
+        uint64_t now = SDL_GetTicks64();
+        int timeout = render_target_tick - now;
+        int player_timeout = player_target_tick - now;
+        unsigned int timeout_delta = abs(timeout - player_timeout);
+        if (timeout_delta < target_frametime) {
+            timeout = player_timeout;
+        }
+
+        if (timeout < 0) timeout = 0;
+        // Wait for next event
+        SDL_WaitEventTimeout(&event, timeout);
     }
 done:
     return 0;

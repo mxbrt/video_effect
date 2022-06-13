@@ -8,6 +8,7 @@
 #include <cstdint>
 
 #include "SDL_stdinc.h"
+#include "SDL_timer.h"
 #include "util.h"
 namespace mpv_glsl {
 
@@ -120,13 +121,14 @@ Player::~Player() {
 void Player::cmd(const char **cmd) { mpv_command_async(mpv, 0, cmd); }
 
 enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
-                              unsigned int fbo) {
+                              unsigned int fbo, uint64_t &draw_target_tick) {
     enum player_event result = PLAYER_NO_EVENT;
+    bool redraw = false;
     // Happens when there is new work for the render thread
     // (such as rendering a new video frame or redrawing it).
     if (event.type == wakeup_on_mpv_render_update) {
         uint64_t flags = mpv_render_context_update(mpv_gl);
-        if (flags & MPV_RENDER_UPDATE_FRAME) result = PLAYER_REDRAW;
+        if (flags & MPV_RENDER_UPDATE_FRAME) redraw = true;
     }
     // Happens when at least 1 new event is in the mpv event
     // queue.
@@ -153,7 +155,7 @@ enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
             printf("event: %s\n", mpv_event_name(mp_event->event_id));
         }
     }
-    if (result == PLAYER_REDRAW) {
+    if (redraw) {
         int w, h;
         SDL_GetWindowSize(ctx->window, &w, &h);
 
@@ -163,14 +165,26 @@ enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
             .h = h,
         };
         int mpv_flip_y = 1;
-        mpv_render_param params[] = {{MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
-                                     // Flip rendering (needed due to
-                                     // flipped GL coordinate system).
-                                     {MPV_RENDER_PARAM_FLIP_Y, &mpv_flip_y},
-                                     {MPV_RENDER_PARAM_INVALID, NULL}};
+        int mpv_block_for_target_time = 0;
+
+        mpv_render_param params[] = {
+            {MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
+            // Flip rendering (needed due to
+            // flipped GL coordinate system).
+            {MPV_RENDER_PARAM_FLIP_Y, &mpv_flip_y},
+            {MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME,
+             &mpv_block_for_target_time},
+            {MPV_RENDER_PARAM_INVALID, NULL}};
+
         // See render_gl.h on what OpenGL environment mpv expects, and
         // other API details.
+        mpv_render_frame_info mpv_next_frame_info = {0};
+        mpv_render_context_get_info(
+            mpv_gl, {MPV_RENDER_PARAM_NEXT_FRAME_INFO, &mpv_next_frame_info});
         mpv_render_context_render(mpv_gl, params);
+        int64_t cur_time = mpv_get_time_us(mpv);
+        draw_target_tick =
+            SDL_GetTicks64() + mpv_next_frame_info.target_time - cur_time;
     }
     return result;
 }

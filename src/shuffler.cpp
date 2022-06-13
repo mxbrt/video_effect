@@ -29,7 +29,7 @@ void Shuffler::read_directories() {
     }
 }
 
-void Shuffler::shuffle() { mpv_glsl::shuffle(begin(files), end(files), rng); }
+void Shuffler::shuffle() { std::shuffle(begin(files), end(files), rng); }
 
 string Shuffler::get() {
     auto result = files[cur_idx];
