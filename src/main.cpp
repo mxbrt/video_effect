@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
 
     // Play this file.
     auto shuffler =
-        Shuffler({opts.media_path + "video", opts.media_path + "video"});
+        Shuffler({opts.media_path + "video", opts.media_path + "image"});
     auto video_path = shuffler.get();
     const char *cmd[] = {"loadfile", video_path.c_str(), NULL};
     player.cmd(cmd);
