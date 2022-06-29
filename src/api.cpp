@@ -37,7 +37,7 @@ void Api::server_run() {
     res.body = command.substr(media_path.size());
   });
 
-  server.listen("localhost", 8000);
+  server.listen("192.168.0.34", 8000);
 }
 
 void Api::set_play_cmd(const string& cmd) {

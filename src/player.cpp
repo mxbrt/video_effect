@@ -37,6 +37,7 @@ Player::Player(struct window_ctx *ctx) {
     if (mpv_initialize(mpv) < 0) die("mpv init failed");
 
     mpv_request_log_messages(mpv, "debug");
+    mpv_set_option_string(mpv, "hwdec", "auto-copy");
 
     // Jesus Christ SDL, you suck!
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "no");

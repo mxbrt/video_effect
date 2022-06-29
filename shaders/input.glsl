@@ -5,7 +5,7 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-#define N_FINGERS 10
+#define N_FINGERS 3
 
 uniform sampler2D effectTexture;
 uniform vec2 resolution;
