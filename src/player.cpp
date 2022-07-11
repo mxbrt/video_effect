@@ -4,12 +4,16 @@
 #include <mpv/client.h>
 #include <mpv/render.h>
 #include <mpv/render_gl.h>
+#include <wayland-client.h>
 
 #include <cstdint>
 
+#include "SDL_error.h"
 #include "SDL_hints.h"
 #include "SDL_stdinc.h"
+#include "SDL_syswm.h"
 #include "SDL_timer.h"
+#include "SDL_version.h"
 #include "util.h"
 namespace mpv_glsl {
 
@@ -32,11 +36,14 @@ static void on_mpv_render_update(void *) {
 
 Player::Player(struct window_ctx *ctx) {
     mpv = mpv_create();
+    //mpv_set_option_string(mpv, "msg-level", "all=trace");
+    mpv_request_log_messages(mpv, "terminal-default");
     if (!mpv) die("context init failed");
     // Some minor options can only be set before mpv_initialize().
     if (mpv_initialize(mpv) < 0) die("mpv init failed");
 
-    mpv_request_log_messages(mpv, "debug");
+    mpv_set_option_string(mpv, "hwdec", "h264-drm-copy");
+    mpv_set_option_string(mpv, "video-sync", "audio");
 
     // Jesus Christ SDL, you suck!
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "no");
@@ -63,13 +70,21 @@ Player::Player(struct window_ctx *ctx) {
     if (!ctx->gl) die("failed to create SDL GL context");
 
     SDL_GL_MakeCurrent(ctx->window, ctx->gl);
-    SDL_GL_SetSwapInterval(1);  // Enable vsync
+    SDL_GL_SetSwapInterval(0);  // disable vsync
 
-    gladLoadGL();
+    gladLoadGLES2Loader(SDL_GL_GetProcAddress);
     mpv_opengl_init_params opengl_params = {
         .get_proc_address = get_proc_address_mpv,
     };
     int advanced_control_param = 1;
+
+    SDL_SysWMinfo info;
+    SDL_VERSION(&info.version);
+
+    if (!SDL_GetWindowWMInfo(ctx->window, &info)) {
+        die("Failed to get WM info: %s\n", SDL_GetError());
+    }
+    struct wl_display *display = info.info.wl.display;
 
     mpv_render_param params[] = {
         {MPV_RENDER_PARAM_API_TYPE, (void *)MPV_RENDER_API_TYPE_OPENGL},
@@ -84,6 +99,7 @@ Player::Player(struct window_ctx *ctx) {
         // separate thread, or remove the option below (this will disable
         // features like DR and is not recommended anyway).
         {MPV_RENDER_PARAM_ADVANCED_CONTROL, &advanced_control_param},
+        {MPV_RENDER_PARAM_WL_DISPLAY, display},
         {MPV_RENDER_PARAM_INVALID, NULL}};
 
     // This makes mpv use the currently set GL context. It will use the
@@ -113,14 +129,16 @@ Player::Player(struct window_ctx *ctx) {
     mpv_render_context_set_update_callback(mpv_gl, on_mpv_render_update, NULL);
 
     mpv_set_property_string(mpv, "image-display-duration", "15");
-}
+    }
 
 Player::~Player() {
     mpv_render_context_free(mpv_gl);
     mpv_detach_destroy(mpv);
 }
 
-void Player::cmd(const char **cmd) { mpv_command_async(mpv, 0, cmd); }
+void Player::cmd(const char **cmd) {
+    mpv_command_async(mpv, 0, cmd);
+}
 
 enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
                               unsigned int fbo, uint64_t &draw_target_tick) {
@@ -142,13 +160,7 @@ enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
             if (mp_event->event_id == MPV_EVENT_LOG_MESSAGE) {
                 mpv_event_log_message *msg =
                     (mpv_event_log_message *)mp_event->data;
-                // Print log messages about DR allocations, just
-                // to test whether it works. If there is more
-                // than 1 of these, it works. (The log message
-                // can actually change any time, so it's
-                // possible this logging stops working in the
-                // future.)
-                if (strstr(msg->text, "DR image")) printf("log: %s", msg->text);
+                printf("[mpv] %s", msg->text);
                 continue;
             }
             if (mp_event->event_id == MPV_EVENT_IDLE) {

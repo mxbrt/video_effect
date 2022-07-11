@@ -6,7 +6,7 @@
 
 namespace mpv_glsl {
 Gui::Gui(window_ctx& window_ctx) {
-  const char* glsl_version = "#version 130";
+  const char* glsl_version = "#version 300 es";
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGui::StyleColorsDark();

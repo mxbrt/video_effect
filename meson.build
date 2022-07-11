@@ -1,6 +1,8 @@
 project('mpv_glsl', 'c', 'cpp',
         default_options : ['c_std=c11', 'cpp_std=c++20'])
 
+add_global_arguments('-DIMGUI_IMPL_OPENGL_ES3', language : 'cpp')
+
 sources = [
   'src/api.cpp',
   'src/fbo.cpp',
@@ -34,9 +36,12 @@ thirdparty_includes = [
   'vendor/cpp-httplib'
 ]
 
-dependencies = [ dependency('sdl2'), dependency('mpv') ]
+dependencies = [ dependency('sdl2'), dependency('mpv'), dependency('glesv2') ]
 
 executable('player',
   sources + thirdparty_sources,
   include_directories: include_directories(includes + thirdparty_includes),
-  dependencies : dependencies)
+  dependencies : dependencies,
+  install: true)
+
+install_subdir('shaders', install_dir : '/opt/share/mpv_glsl')

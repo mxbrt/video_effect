@@ -96,20 +96,21 @@ int main(int argc, char *argv[]) {
         .finger_radius = 0.15,
         .effect_fade_in = 0.1,
         .effect_fade_out = 0.1,
-        .pixelization = 28.0,
+        .pixelization = 1.0,
         .input_debug = false,
     };
 
     // Play this file.
     auto shuffler =
-        Shuffler({opts.media_path + "video", opts.media_path + "image"});
+        Shuffler({opts.media_path + "video", opts.media_path + "video"});
     auto video_path = shuffler.get();
     const char *cmd[] = {"loadfile", video_path.c_str(), NULL};
     player.cmd(cmd);
 
-    uint64_t target_frametime = 1000 / 60;
+    uint64_t target_frametime = 1000 / 50;
     uint64_t render_target_tick = SDL_GetTicks64();
-    uint64_t player_target_tick = 0;
+    uint64_t player_target_tick = 1;
+    uint64_t last_player_swap = 0;
 
     // Start API server
     auto api = Api(opts.media_path, opts.website_path);
@@ -120,62 +121,69 @@ int main(int argc, char *argv[]) {
         auto &next_mpv_fbo = mpv_fbo[(mpv_fbo_idx + 1) % 2];
         bool window_exposed = false;
 
-        SDL_Event event;
         enum player_event player_event = PLAYER_NO_EVENT;
-        switch (event.type) {
-            case SDL_QUIT:
-                goto done;
-            case SDL_WINDOWEVENT:
-                if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
-                    window_exposed = true;
-                }
-                break;
-            case SDL_KEYDOWN:
-                if (event.key.keysym.sym == SDLK_SPACE) {
-                    const char *cmd_pause[] = {"cycle", "pause", NULL};
-                    player.cmd(cmd_pause);
-                }
-                break;
-            default:
-                player_event = player.run(&window_ctx, event, next_mpv_fbo.fbo,
-                                          player_target_tick);
-                break;
+        SDL_Event event;
+        bool imgui_event = false;
+        while (SDL_PollEvent(&event)) {
+            imgui_event = imgui_event || gui.process_event(event);
+            switch (event.type) {
+                case SDL_QUIT:
+                    goto done;
+                case SDL_WINDOWEVENT:
+                    if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
+                        window_exposed = true;
+                    }
+                    break;
+                case SDL_KEYDOWN:
+                    if (event.key.keysym.sym == SDLK_SPACE) {
+                        const char *cmd_pause[] = {"cycle", "pause", NULL};
+                        player.cmd(cmd_pause);
+                    }
+                    break;
+                default:
+                    player_event =
+                        player.run(&window_ctx, event, next_mpv_fbo.fbo,
+                                   player_target_tick);
+                    if (player_event == PLAYER_IDLE) {
+                        auto media_path = shuffler.get();
+                        const char *cmd[] = {"loadfile", media_path.c_str(),
+                                             NULL};
+                        player.cmd(cmd);
+                        api.set_play_cmd(media_path.c_str());
+                        player_event = PLAYER_NO_EVENT;
+                    }
+                    break;
+            }
         }
-
-        bool imgui_event = gui.process_event(event);
 
         auto play_command = api.get_play_cmd();
         if (play_command) {
             const char *cmd[] = {"loadfile", play_command->c_str(), NULL};
             player.cmd(cmd);
-        } else if (player_event == PLAYER_IDLE) {
-            auto media_path = shuffler.get();
-            const char *cmd[] = {"loadfile", media_path.c_str(), NULL};
-            player.cmd(cmd);
-            api.set_play_cmd(media_path.c_str());
         }
 
         uint64_t ticks = SDL_GetTicks64();
-
-        if (ticks > player_target_tick) {
-            player_target_tick = player_target_tick + 1000000;
+        if (ticks >= player_target_tick &&
+            player_target_tick > last_player_swap) {
+            last_player_swap = ticks;
             mpv_fbo_idx = (mpv_fbo_idx + 1) % 2;
             cur_mpv_fbo = mpv_fbo[mpv_fbo_idx];
             next_mpv_fbo = mpv_fbo[(mpv_fbo_idx + 1) % 2];
         }
 
         if (ticks > render_target_tick || window_exposed) {
-            render_target_tick = ticks + target_frametime;
+            render_target_tick = ticks + target_frametime - 1;
             uint32_t buttons;
             SDL_PumpEvents();  // make sure we have the latest input state.
             float fingers_uniform[N_FINGERS][3] = {};
             for (int i = 0; i < N_FINGERS; i++) {
-                // We initialize the z value to a high value. It will be set to
-                // zero, if a click or touch is active. Consequently, finger
-                // positions that are not active will have a very high distance
-                // to the xy plane.
+                // We initialize the z value to a high value. It will be set
+                // to zero, if a click or touch is active. Consequently,
+                // finger positions that are not active will have a very
+                // high distance to the xy plane.
                 fingers_uniform[i][2] = 1000000;
             }
+
             if (!imgui_event) {
                 int mouse_x = 0, mouse_y = 0;
                 buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
@@ -268,17 +276,6 @@ int main(int argc, char *argv[]) {
             gui.render(gui_data);
             SDL_GL_SwapWindow(window_ctx.window);
         }
-        uint64_t now = SDL_GetTicks64();
-        int timeout = render_target_tick - now;
-        int player_timeout = player_target_tick - now;
-        unsigned int timeout_delta = abs(timeout - player_timeout);
-        if (timeout_delta < target_frametime) {
-            timeout = player_timeout;
-        }
-
-        if (timeout < 0) timeout = 0;
-        // Wait for next event
-        SDL_WaitEventTimeout(&event, timeout);
     }
 done:
     return 0;
