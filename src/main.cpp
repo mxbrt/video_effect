@@ -107,7 +107,6 @@ int main(int argc, char *argv[]) {
                             .effect_fade_in = 0.2,
                             .effect_fade_out = 0.1,
                             .effect_amount = 10.0,
-                            .input_debug = false,
                             .effects = effects,
                             .selected_effect = default_effect};
     size_t loaded_effect = default_effect;
@@ -284,9 +283,6 @@ int main(int argc, char *argv[]) {
                 width, height);
             glUniform1f(glGetUniformLocation(effect_shader.program, "amount"),
                         gui_data.effect_amount);
-            glUniform1i(
-                glGetUniformLocation(effect_shader.program, "inputDebug"),
-                gui_data.input_debug);
 
             glad_glBindVertexArray(quad_vbo.vao);
             glDrawArrays(GL_TRIANGLES, 0, 6);

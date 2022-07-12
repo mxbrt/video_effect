@@ -19,7 +19,6 @@ struct GuiData {
   float effect_fade_in;
   float effect_fade_out;
   float effect_amount;
-  bool input_debug;
   vector<EffectItem> effects;
   size_t selected_effect;
 };
