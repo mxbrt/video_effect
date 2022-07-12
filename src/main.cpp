@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     auto player = Player(&window_ctx);
     auto gui = Gui(window_ctx);
 
-    auto pixelization_shader = Shader("shaders/vert.glsl", "shaders/frag.glsl");
+    auto effect_shader = Shader("shaders/vert.glsl", "shaders/frag.glsl");
     auto input_shader = Shader("shaders/vert.glsl", "shaders/input.glsl");
 
     auto quad_vbo = Vbo(quadVertices);
@@ -93,10 +93,10 @@ int main(int argc, char *argv[]) {
 
     // gui values
     auto gui_data = GuiData{
-        .finger_radius = 0.15,
-        .effect_fade_in = 0.1,
+        .finger_radius = 0.20,
+        .effect_fade_in = 0.2,
         .effect_fade_out = 0.1,
-        .pixelization = 1.0,
+        .effect_amount = 10.0,
         .input_debug = false,
     };
 
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
             }
 
             if (opts.shader_reload) {
-                pixelization_shader.reload();
+                effect_shader.reload();
                 input_shader.reload();
             }
 
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
             glad_glBindVertexArray(quad_vbo.vao);
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
-            glUseProgram(pixelization_shader.program);
+            glUseProgram(effect_shader.program);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, cur_mpv_fbo.texture.id);
             glActiveTexture(GL_TEXTURE1);
@@ -254,20 +254,18 @@ int main(int argc, char *argv[]) {
             glDisable(GL_DEPTH_TEST);
             glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-            glUniform1i(glGetUniformLocation(pixelization_shader.program,
-                                             "movieTexture"),
-                        0);
-            glUniform1i(glGetUniformLocation(pixelization_shader.program,
-                                             "effectTexture"),
-                        1);
-            glUniform2f(
-                glGetUniformLocation(pixelization_shader.program, "resolution"),
-                width, height);
-            glUniform1f(glGetUniformLocation(pixelization_shader.program,
-                                             "pixelization"),
-                        gui_data.pixelization);
             glUniform1i(
-                glGetUniformLocation(pixelization_shader.program, "inputDebug"),
+                glGetUniformLocation(effect_shader.program, "movieTexture"), 0);
+            glUniform1i(
+                glGetUniformLocation(effect_shader.program, "effectTexture"),
+                1);
+            glUniform2f(
+                glGetUniformLocation(effect_shader.program, "resolution"),
+                width, height);
+            glUniform1f(glGetUniformLocation(effect_shader.program, "amount"),
+                        gui_data.effect_amount);
+            glUniform1i(
+                glGetUniformLocation(effect_shader.program, "inputDebug"),
                 gui_data.input_debug);
 
             glad_glBindVertexArray(quad_vbo.vao);

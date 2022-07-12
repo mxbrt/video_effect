@@ -10,7 +10,7 @@ struct GuiData {
   float finger_radius;
   float effect_fade_in;
   float effect_fade_out;
-  float pixelization;
+  float effect_amount;
   bool input_debug;
 };
 

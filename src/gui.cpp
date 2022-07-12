@@ -26,7 +26,7 @@ void Gui::render(struct GuiData& data) {
   ImGui::NewFrame();
   {
     ImGui::Begin("Settings");
-    ImGui::SliderFloat("Pixelization", &data.pixelization, 1.0f, 100.0f);
+    ImGui::SliderFloat("Effect strength", &data.effect_amount, 0.0f, 100.0f);
     ImGui::SliderFloat("Touch Radius", &data.finger_radius, 0.0f, 1.0f);
     ImGui::SliderFloat("Effect Fade In", &data.effect_fade_in, 0.0f, 1.0f);
     ImGui::SliderFloat("Effect Fade Out", &data.effect_fade_out, 0.0f, 1.0f);
