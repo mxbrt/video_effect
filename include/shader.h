@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 #include "sdl_gl.h"
 
@@ -7,10 +8,11 @@ namespace mpv_glsl {
 using namespace std;
 class Shader {
  public:
-  Shader(const string& vert_shader_path,
-                 const string& frag_shader_path);
+  Shader(const string& vert_shader_path, const string& frag_shader_path,
+         const string& macros = "#version 300 es\n");
   ~Shader();
   void reload();
+  void set_macros(const string& define);
 
   int program;
  private:
@@ -24,6 +26,7 @@ class Shader {
   string frag_path;
   string vert_path;
   int src_mtime;
+  string macros;
   };
 
 void shader_reload(struct shader* s);

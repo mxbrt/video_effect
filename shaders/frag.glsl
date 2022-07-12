@@ -1,4 +1,3 @@
-#version 300 es
 precision highp float;
 
 out vec4 FragColor;
@@ -9,8 +8,8 @@ uniform sampler2D movieTexture;
 uniform sampler2D effectTexture;
 uniform vec2 resolution;
 uniform float amount;
-uniform int inputDebug;
 
+#ifdef Swirl
 // Some useful functions
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -85,7 +84,7 @@ float snoise(vec2 v) {
     return 130.0 * dot(m, g);
 }
 
-void noiseEffect(vec4 intensity)
+void effect(vec4 intensity)
 {
     //float offset = snoise(TexCoords / (intensity.x + 0.5)) * .5 + amount / 100.0;
     float offset = snoise(TexCoords * log(amount / 2.0)) * .5 + 0.5;
@@ -93,36 +92,48 @@ void noiseEffect(vec4 intensity)
     offset = mix(offset, 0.0, intensity.x);
     FragColor = texture(movieTexture, TexCoords + offset);
 }
+#endif
 
+#ifdef Blur
 // FIXME: optimize with horizontal & vertical blur render passes
-void blur(vec4 intensity)
+void effect(vec4 intensity)
 {
     float invAspect = resolution.y / resolution.x;
     vec4 color = vec4(0.0);
-    int size = 16;
-    for (int i = -size; i <= size; ++i) {
-        for (int j = -size; j <= size; ++j) {
-            vec2 offset = vec2(i,j) / resolution;
+    float size = 1.0;
+    for (float i = -size; i <= size; ++i) {
+        for (float j = -size; j <= size; ++j) {
+            vec2 offset = vec2(i,j) * vec2(amount) / resolution;
+            offset = mix(offset, vec2(0.0), vec2(intensity.x));
             color += texture(movieTexture, TexCoords + offset);
         }
     }
-    FragColor = color / pow(float(size * 2 + 1), 2.0);
+    FragColor = color / pow(size * 2.0 + 1.0, 2.0);
 }
+#endif
 
-void pixel(vec4 intensity)
+#ifdef Pixel
+void effect(vec4 intensity)
 {
     vec2 pixelFactor = resolution / (amount - amount * intensity.x);
     vec2 coord = round(TexCoords * pixelFactor) / pixelFactor;
     FragColor = texture(movieTexture, coord);
 }
+#endif
+
+#ifdef Debug
+void effect(vec4 intensity)
+{
+    FragColor = vec4(intensity.xy, 0.0, 1.0);
+}
+#endif
+
 
 void main() {
     vec4 intensity = texture(effectTexture, TexCoords);
     if (intensity.x > 0.99 || amount == 0.0) {
         FragColor = texture(movieTexture, TexCoords);
-    } else if (inputDebug == 1) {
-        FragColor = vec4(intensity.xy, 0.0, 1.0);
     } else {
-        noiseEffect(intensity);
+        effect(intensity);
     }
 }

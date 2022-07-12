@@ -1,3 +1,4 @@
+#include <cctype>
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -5,6 +6,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <sstream>
 #include <string>
 
 #include "SDL_events.h"
@@ -81,7 +83,9 @@ int main(int argc, char *argv[]) {
     auto player = Player(&window_ctx);
     auto gui = Gui(window_ctx);
 
-    auto effect_shader = Shader("shaders/vert.glsl", "shaders/frag.glsl");
+    auto effect_macro = "#version 300 es\n#define Swirl\n";
+    auto effect_shader =
+        Shader("shaders/vert.glsl", "shaders/frag.glsl", effect_macro);
     auto input_shader = Shader("shaders/vert.glsl", "shaders/input.glsl");
 
     auto quad_vbo = Vbo(quadVertices);
@@ -92,13 +96,21 @@ int main(int argc, char *argv[]) {
     int mpv_fbo_idx = 0;
 
     // gui values
-    auto gui_data = GuiData{
-        .finger_radius = 0.20,
-        .effect_fade_in = 0.2,
-        .effect_fade_out = 0.1,
-        .effect_amount = 10.0,
-        .input_debug = false,
+    vector<EffectItem> effects = {
+        {.name = "Swirl", .is_selected = true},
+        {.name = "Blur", .is_selected = false},
+        {.name = "Pixel", .is_selected = false},
+        {.name = "Debug", .is_selected = false},
     };
+    size_t default_effect = 0;
+    auto gui_data = GuiData{.finger_radius = 0.20,
+                            .effect_fade_in = 0.2,
+                            .effect_fade_out = 0.1,
+                            .effect_amount = 10.0,
+                            .input_debug = false,
+                            .effects = effects,
+                            .selected_effect = default_effect};
+    size_t loaded_effect = default_effect;
 
     // Play this file.
     auto shuffler =
@@ -209,6 +221,14 @@ int main(int argc, char *argv[]) {
                         fingers_uniform[i][2] = 0.0;
                     }
                 }
+            }
+
+            if (loaded_effect != gui_data.selected_effect) {
+                auto effect = gui_data.effects[gui_data.selected_effect];
+                stringstream ss;
+                ss << "#version 300 es\n#define " << effect.name << "\n";
+                effect_shader.set_macros(ss.str());
+                loaded_effect = gui_data.selected_effect;
             }
 
             if (opts.shader_reload) {

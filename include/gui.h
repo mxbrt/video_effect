@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <vector>
 
 #include "imgui.h"
@@ -6,12 +7,21 @@
 #include "player.h"
 
 namespace mpv_glsl {
+using namespace std;
+
+struct EffectItem {
+  const char* name;
+  bool is_selected;
+};
+
 struct GuiData {
   float finger_radius;
   float effect_fade_in;
   float effect_fade_out;
   float effect_amount;
   bool input_debug;
+  vector<EffectItem> effects;
+  size_t selected_effect;
 };
 
 class Gui {

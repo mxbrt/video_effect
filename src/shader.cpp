@@ -8,9 +8,10 @@
 
 namespace mpv_glsl {
 using namespace std;
-Shader::Shader(const string &vert_shader_path,
-               const string &frag_shader_path)
-    : frag_path(frag_shader_path), vert_path(vert_shader_path) {
+
+Shader::Shader(const string &vert_shader_path, const string &frag_shader_path,
+               const string &macros)
+    : frag_path(frag_shader_path), vert_path(vert_shader_path), macros(macros) {
     init();
 }
 
@@ -51,8 +52,8 @@ int Shader::compile(const string &path, int type) {
     unsigned int shader = glCreateShader(type);
     int success;
     char info[512];
-    const char *shader_arg[2] = {shader_src.c_str(), NULL};
-    glShaderSource(shader, 1, shader_arg, NULL);
+    const char *shader_arg[3] = {macros.c_str(), shader_src.c_str(), NULL};
+    glShaderSource(shader, 2, shader_arg, NULL);
     glCompileShader(shader);
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
@@ -75,5 +76,10 @@ void Shader::reload() {
         fprintf(stdout, "Reloading shaders\n");
         init();
     }
+}
+
+void Shader::set_macros(const string &new_macros) {
+    macros = new_macros;
+    init();
 }
 }  // namespace mpv_glsl
