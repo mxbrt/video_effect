@@ -70,7 +70,7 @@ Player::Player(struct window_ctx *ctx) {
     if (!ctx->gl) die("failed to create SDL GL context");
 
     SDL_GL_MakeCurrent(ctx->window, ctx->gl);
-    SDL_GL_SetSwapInterval(0);  // disable vsync
+    SDL_GL_SetSwapInterval(1);
 
     gladLoadGLES2Loader(SDL_GL_GetProcAddress);
     mpv_opengl_init_params opengl_params = {
