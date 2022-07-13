@@ -11,6 +11,9 @@ class Shader {
   Shader(const string& vert_shader_path, const string& frag_shader_path,
          const string& macros = "#version 300 es\n");
   ~Shader();
+  Shader(const Shader&) = delete;
+  Shader& operator=(const Shader&) = delete;
+
   void reload();
   void set_macros(const string& define);
 

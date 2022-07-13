@@ -15,6 +15,9 @@ class Api {
  public:
   Api(const string& media_path, const string& website_path);
   ~Api();
+  Api(const Api&) = delete;
+  Api& operator=(const Api&) = delete;
+
   optional<string> get_play_cmd();
   void set_play_cmd(const string& cmd);
 
