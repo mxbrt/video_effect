@@ -262,6 +262,8 @@ int main(int argc, char *argv[]) {
                     width, height);
         glUniform1f(glGetUniformLocation(effect_shader.program, "amount"),
                     gui_data.effect_amount);
+        glUniform1f(glGetUniformLocation(effect_shader.program, "time"),
+                    ticks / 1000.0);
 
         glad_glBindVertexArray(quad_vbo.vao);
         glDrawArrays(GL_TRIANGLES, 0, 6);

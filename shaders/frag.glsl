@@ -8,6 +8,7 @@ uniform sampler2D movieTexture;
 uniform sampler2D effectTexture;
 uniform vec2 resolution;
 uniform float amount;
+uniform float time;
 
 #ifdef Swirl
 // Some useful functions
@@ -87,10 +88,10 @@ float snoise(vec2 v) {
 
 void effect(float intensity)
 {
-    //float offset = snoise(TexCoords / (intensity.x + 0.5)) * .5 + amount / 100.0;
+    float offset2 = snoise(vec2(time * 0.01, time * 0.01));
     float offset = snoise(TexCoords * log(amount / 2.0)) * .5 + 0.5;
 
-    offset = mix(offset, 0.0, intensity);
+    offset = mix(offset + offset2, 0.0, intensity);
     FragColor = texture(movieTexture, TexCoords + offset);
 }
 precision mediump float;
