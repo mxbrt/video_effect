@@ -128,8 +128,6 @@ int main(int argc, char *argv[]) {
     while (1) {
         auto &cur_mpv_fbo = mpv_fbo[mpv_fbo_idx];
         auto &next_mpv_fbo = mpv_fbo[(mpv_fbo_idx + 1) % 2];
-        bool window_exposed = false;
-
         enum player_event player_event = PLAYER_NO_EVENT;
         SDL_Event event;
         bool imgui_event = false;
@@ -141,9 +139,6 @@ int main(int argc, char *argv[]) {
                 case SDL_QUIT:
                     goto done;
                 case SDL_WINDOWEVENT:
-                    if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
-                        window_exposed = true;
-                    }
                     break;
                 case SDL_KEYDOWN:
                     if (event.key.keysym.sym == SDLK_SPACE) {
