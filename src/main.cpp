@@ -224,6 +224,8 @@ int main(int argc, char *argv[]) {
 
         effect_fbos.swap();
 
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
         glUseProgram(input_shader.program);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, effect_fbos.get_last().texture.id);
