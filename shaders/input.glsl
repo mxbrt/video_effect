@@ -1,4 +1,4 @@
-precision highp float;
+precision mediump float;
 
 out vec4 FragColor;
 
@@ -18,7 +18,7 @@ void main()
     vec2 aspectRatio = vec2(resolution.x / resolution.y, 1.0);
     vec2 texUV = TexCoords * aspectRatio;
 
-    float fingerDist = 100000.0;
+    float fingerDist = 10000.0;
     for (int i = 0; i < N_FINGERS; i++) {
         vec3 finger = fingers[i];
         vec2 fingerUV = (finger.xy / resolution.xy) * aspectRatio;
@@ -27,11 +27,9 @@ void main()
                         vec3(fingerUV, finger[2]))));
     }
 
-    vec4 lastColor = texture(effectTexture, TexCoords);
-
-    if (fingerDist < fingerRadius) {
-        FragColor = mix(lastColor, vec4(1.1), effectFadeIn * 0.2);
-    } else {
-        FragColor = mix(lastColor, vec4(-0.1), effectFadeOut * 0.2);
-    }
+    float lastIntensity = texture(effectTexture, TexCoords).r;
+    float effectFade = fingerDist < fingerRadius ?
+        effectFadeIn * 0.2 :
+        -effectFadeOut * 0.1;
+    FragColor.r = clamp(lastIntensity + effectFade, 0.0, 3.0);
 }

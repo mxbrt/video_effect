@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     auto quad_vbo = Vbo(quadVertices);
     // framebuffer configuration
     DoubleFbo mpv_fbos = DoubleFbo(width, height);
-    DoubleFbo effect_fbos = DoubleFbo(width, height);
+    DoubleFbo effect_fbos = DoubleFbo(width, height, GL_R32F);
 
     // gui values
     vector<EffectItem> effects = {
@@ -252,8 +252,6 @@ int main(int argc, char *argv[]) {
         glBindTexture(GL_TEXTURE_2D, effect_fbos.get_current().texture.id);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
         glUniform1i(glGetUniformLocation(effect_shader.program, "movieTexture"),
                     0);
         glUniform1i(

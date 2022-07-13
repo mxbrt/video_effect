@@ -1,4 +1,4 @@
-precision highp float;
+precision mediump float;
 
 out vec4 FragColor;
 
@@ -84,19 +84,19 @@ float snoise(vec2 v) {
     return 130.0 * dot(m, g);
 }
 
-void effect(vec4 intensity)
+void effect(float intensity)
 {
     //float offset = snoise(TexCoords / (intensity.x + 0.5)) * .5 + amount / 100.0;
     float offset = snoise(TexCoords * log(amount / 2.0)) * .5 + 0.5;
 
-    offset = mix(offset, 0.0, intensity.x);
+    offset = mix(offset, 0.0, intensity);
     FragColor = texture(movieTexture, TexCoords + offset);
 }
 #endif
 
 #ifdef Blur
 // FIXME: optimize with horizontal & vertical blur render passes
-void effect(vec4 intensity)
+void effect(float intensity)
 {
     float invAspect = resolution.y / resolution.x;
     vec4 color = vec4(0.0);
@@ -104,7 +104,7 @@ void effect(vec4 intensity)
     for (float i = -size; i <= size; ++i) {
         for (float j = -size; j <= size; ++j) {
             vec2 offset = vec2(i,j) * vec2(amount) / resolution;
-            offset = mix(offset, vec2(0.0), vec2(intensity.x));
+            offset = mix(offset, vec2(0.0), vec2(intensity));
             color += texture(movieTexture, TexCoords + offset);
         }
     }
@@ -113,25 +113,29 @@ void effect(vec4 intensity)
 #endif
 
 #ifdef Pixel
-void effect(vec4 intensity)
+void effect(float intensity)
 {
-    vec2 pixelFactor = resolution / (amount - amount * intensity.x);
-    vec2 coord = round(TexCoords * pixelFactor) / pixelFactor;
-    FragColor = texture(movieTexture, coord);
+    if (intensity >= 1.0) {
+        FragColor = texture(movieTexture, TexCoords);
+    } else {
+        vec2 pixelFactor = resolution / (amount - amount * intensity);
+        vec2 coord = round(TexCoords * pixelFactor) / pixelFactor;
+        FragColor = texture(movieTexture, coord);
+    }
 }
 #endif
 
 #ifdef Debug
-void effect(vec4 intensity)
+void effect(float intensity)
 {
-    FragColor = vec4(intensity.xy, 0.0, 1.0);
+    FragColor = vec4(vec3(intensity), 1.0);
 }
 #endif
 
 
 void main() {
-    vec4 intensity = texture(effectTexture, TexCoords);
-    if (intensity.x > 0.99 || amount == 0.0) {
+    float intensity = clamp(texture(effectTexture, TexCoords).x, 0.0, 1.0);
+    if (amount == 0.0) {
         FragColor = texture(movieTexture, TexCoords);
     } else {
         effect(intensity);
