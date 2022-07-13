@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
         {.name = "Swirl", .is_selected = true},
         {.name = "Blur", .is_selected = false},
         {.name = "Pixel", .is_selected = false},
+        {.name = "Voronoi", .is_selected = false},
         {.name = "Debug", .is_selected = false},
     };
     size_t default_effect = 0;

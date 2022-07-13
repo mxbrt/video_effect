@@ -97,6 +97,51 @@ void effect(float intensity)
 precision mediump float;
 #endif
 
+#ifdef Voronoi
+vec2 random2( vec2 p ) {
+    return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);
+}
+
+void effect(float intensity) {
+    vec2 st = TexCoords;
+    vec3 color = vec3(.0);
+
+    // Scale
+    float scale = 1.0 + (100.0 - amount) + 1000.0 * intensity;
+    st *= scale;
+
+    // Tile the space
+    vec2 iSt = floor(st);
+    vec2 fSt = fract(st);
+
+    float mDist = 10.;  // minimum distance
+    vec2 mPoint;        // minimum point
+    vec2 mCell;
+
+    for (int j=-1; j<=1; j++ ) {
+        for (int i=-1; i<=1; i++ ) {
+            vec2 neighbor = vec2(float(i),float(j));
+            vec2 point = random2(iSt + neighbor);
+            point = 0.5 + 0.5*sin(time * 0.1 + 6.2831*point);
+            vec2 diff = neighbor + point - fSt;
+            float dist = length(diff);
+
+            if( dist < mDist ) {
+                mCell = iSt + neighbor;
+                mDist = dist;
+                mPoint = point;
+            }
+        }
+    }
+
+    // Assign a color using the closest point position
+    vec2 moviePoint = (mCell + mPoint) / scale;
+    color += texture(movieTexture, moviePoint).rgb;
+
+    FragColor = vec4(color,1.0);
+}
+#endif
+
 #ifdef Blur
 // FIXME: optimize with horizontal & vertical blur render passes
 void effect(float intensity)
