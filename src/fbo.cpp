@@ -5,7 +5,8 @@
 #include "util.h"
 
 namespace mpv_glsl {
-Fbo::Fbo(int width, int height) : texture(Texture(width, height)) {
+Fbo::Fbo(int width, int height, int internalformat)
+    : texture(Texture(width, height, internalformat)) {
   glGenFramebuffers(1, &fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -29,4 +30,13 @@ Fbo::~Fbo() {
   glDeleteRenderbuffers(1, &rbo);
   glDeleteFramebuffers(1, &fbo);
 }
+
+DoubleFbo::DoubleFbo(int width, int height, int internalformat)
+    : fbos{Fbo(width, height, internalformat),
+           Fbo(width, height, internalformat)} {}
+
+Fbo& DoubleFbo::get_current() { return fbos[fbo_idx]; }
+Fbo& DoubleFbo::get_last() { return fbos[(fbo_idx + 1) % 2]; }
+void DoubleFbo::swap() { fbo_idx = (fbo_idx + 1) % 2; }
+
 }  // namespace mpv_glsl

@@ -90,10 +90,8 @@ int main(int argc, char *argv[]) {
 
     auto quad_vbo = Vbo(quadVertices);
     // framebuffer configuration
-    Fbo mpv_fbo[2] = {Fbo(width, height), Fbo(width, height)};
-    Fbo effect_fbo[2] = {Fbo(width, height), Fbo(width, height)};
-    int effect_fbo_idx = 0;
-    int mpv_fbo_idx = 0;
+    DoubleFbo mpv_fbos = DoubleFbo(width, height);
+    DoubleFbo effect_fbos = DoubleFbo(width, height);
 
     // gui values
     vector<EffectItem> effects = {
@@ -126,8 +124,6 @@ int main(int argc, char *argv[]) {
 
     // Touch event state
     while (1) {
-        auto &cur_mpv_fbo = mpv_fbo[mpv_fbo_idx];
-        auto &next_mpv_fbo = mpv_fbo[(mpv_fbo_idx + 1) % 2];
         enum player_event player_event = PLAYER_NO_EVENT;
         SDL_Event event;
         bool imgui_event = false;
@@ -147,9 +143,9 @@ int main(int argc, char *argv[]) {
                     }
                     break;
                 default:
-                    player_event =
-                        player.run(&window_ctx, event, next_mpv_fbo.fbo,
-                                   player_target_tick);
+                    player_event = player.run(&window_ctx, event,
+                                              mpv_fbos.get_current().fbo,
+                                              player_target_tick);
                     if (player_event == PLAYER_IDLE) {
                         auto media_path = shuffler.get();
                         const char *cmd[] = {"loadfile", media_path.c_str(),
@@ -172,9 +168,7 @@ int main(int argc, char *argv[]) {
         if (ticks >= player_target_tick &&
             player_target_tick > last_player_swap) {
             last_player_swap = ticks;
-            mpv_fbo_idx = (mpv_fbo_idx + 1) % 2;
-            cur_mpv_fbo = mpv_fbo[mpv_fbo_idx];
-            next_mpv_fbo = mpv_fbo[(mpv_fbo_idx + 1) % 2];
+            mpv_fbos.swap();
         }
 
         uint32_t buttons;
@@ -228,14 +222,12 @@ int main(int argc, char *argv[]) {
             input_shader.reload();
         }
 
-        auto &last_effect_fbo = effect_fbo[effect_fbo_idx];
-        auto &cur_effect_fbo = effect_fbo[(effect_fbo_idx + 1) % 2];
-        effect_fbo_idx = (effect_fbo_idx + 1) % 2;
+        effect_fbos.swap();
 
         glUseProgram(input_shader.program);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, last_effect_fbo.texture.id);
-        glBindFramebuffer(GL_FRAMEBUFFER, cur_effect_fbo.fbo);
+        glBindTexture(GL_TEXTURE_2D, effect_fbos.get_last().texture.id);
+        glBindFramebuffer(GL_FRAMEBUFFER, effect_fbos.get_current().fbo);
         glDisable(GL_DEPTH_TEST);
 
         glUniform1i(glGetUniformLocation(input_shader.program, "effectTexture"),
@@ -255,9 +247,9 @@ int main(int argc, char *argv[]) {
 
         glUseProgram(effect_shader.program);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, cur_mpv_fbo.texture.id);
+        glBindTexture(GL_TEXTURE_2D, mpv_fbos.get_current().texture.id);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, cur_effect_fbo.texture.id);
+        glBindTexture(GL_TEXTURE_2D, effect_fbos.get_current().texture.id);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);

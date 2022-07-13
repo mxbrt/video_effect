@@ -18,4 +18,18 @@ class Fbo {
  private:
   unsigned int rbo;
 };
+
+class DoubleFbo {
+ public:
+  DoubleFbo(int width, int height, int internalformat = GL_RGB);
+
+  Fbo& get_current();
+  Fbo& get_last();
+  void swap();
+
+ private:
+  Fbo fbos[2];
+  size_t fbo_idx;
+};
+
 }  // namespace mpv_glsl
