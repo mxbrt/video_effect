@@ -88,10 +88,11 @@ float snoise(vec2 v) {
 
 void effect(float intensity)
 {
-    float offset2 = snoise(vec2(time * 0.01, time * 0.01));
+    //float offset2 = snoise(vec2(time * 0.01, time * 0.01));
     float offset = snoise(TexCoords * log(amount / 2.0)) * .5 + 0.5;
 
-    offset = mix(offset + offset2, 0.0, intensity);
+    //offset = mix(offset + offset2, 0.0, intensity);
+    offset = mix(offset, 0.0, intensity);
     FragColor = texture(movieTexture, TexCoords + offset);
 }
 precision mediump float;
@@ -118,17 +119,17 @@ void effect(float intensity) {
     vec2 mPoint;        // minimum point
     vec2 mCell;
 
-    for (int j=-1; j<=1; j++ ) {
-        for (int i=-1; i<=1; i++ ) {
-            vec2 neighbor = vec2(float(i),float(j));
+    for (float j=-1.0; j<=1.0; j++ ) {
+        for (float i=-1.0; i<=1.0; i++ ) {
+            vec2 neighbor = vec2(i,j);
             vec2 point = random2(iSt + neighbor);
             point = 0.5 + 0.5*sin(time * 0.1 + 6.2831*point);
             vec2 diff = neighbor + point - fSt;
-            float dist = length(diff);
+            float dist_squared = dot(diff, diff);
 
-            if( dist < mDist ) {
+            if( dist_squared < mDist ) {
                 mCell = iSt + neighbor;
-                mDist = dist;
+                mDist = dist_squared;
                 mPoint = point;
             }
         }

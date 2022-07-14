@@ -21,14 +21,13 @@ void main()
     float fingerDist = 10000.0;
     for (int i = 0; i < N_FINGERS; i++) {
         vec3 finger = fingers[i];
-        vec2 fingerUV = (finger.xy / resolution.xy) * aspectRatio;
-        fingerDist = min(fingerDist, abs(distance(
-                        vec3(texUV, 0.0),
-                        vec3(fingerUV, finger[2]))));
+        vec3 fingerUV = vec3((finger.xy / resolution.xy) * aspectRatio, finger.z);
+        vec3 diff = vec3(texUV, 0.0) - fingerUV;
+        fingerDist = min(fingerDist, abs(dot(diff, diff)));
     }
 
     float lastIntensity = texture(effectTexture, TexCoords).r;
-    float effectFade = fingerDist < fingerRadius ?
+    float effectFade = sqrt(fingerDist) < fingerRadius ?
         effectFadeIn * 0.2 :
         -effectFadeOut * 0.1;
     FragColor.r = clamp(lastIntensity + effectFade, 0.0, 3.0);
