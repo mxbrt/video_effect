@@ -34,10 +34,11 @@ Fbo::~Fbo() {
 
 DoubleFbo::DoubleFbo(int width, int height, int internalformat)
     : fbos{Fbo(width, height, internalformat),
-           Fbo(width, height, internalformat)} {}
+           Fbo(width, height, internalformat)},
+      fbo_idx(0) {}
 
-Fbo& DoubleFbo::get_current() { return fbos[fbo_idx]; }
-Fbo& DoubleFbo::get_last() { return fbos[(fbo_idx + 1) % 2]; }
+Fbo& DoubleFbo::get_front() { return fbos[fbo_idx]; }
+Fbo& DoubleFbo::get_back() { return fbos[(fbo_idx + 1) % 2]; }
 void DoubleFbo::swap() { fbo_idx = (fbo_idx + 1) % 2; }
 
 }  // namespace mpv_glsl

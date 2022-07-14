@@ -166,6 +166,8 @@ enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
             if (mp_event->event_id == MPV_EVENT_IDLE) {
                 result = PLAYER_IDLE;
             }
+            if (mp_event->event_id == MPV_EVENT_START_FILE) {
+            }
             printf("event: %s\n", mpv_event_name(mp_event->event_id));
         }
     }
@@ -197,8 +199,8 @@ enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
             mpv_gl, {MPV_RENDER_PARAM_NEXT_FRAME_INFO, &mpv_next_frame_info});
         mpv_render_context_render(mpv_gl, params);
         int64_t cur_time = mpv_get_time_us(mpv);
-        draw_target_tick =
-            SDL_GetTicks64() + mpv_next_frame_info.target_time - cur_time;
+        draw_target_tick = SDL_GetTicks64() +
+                           (mpv_next_frame_info.target_time - cur_time) / 1000;
     }
     return result;
 }

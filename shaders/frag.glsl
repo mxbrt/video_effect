@@ -90,7 +90,6 @@ void effect(float intensity)
 {
     //float offset2 = snoise(vec2(time * 0.01, time * 0.01));
     float offset = snoise(TexCoords * log(amount / 2.0)) * .5 + 0.5;
-
     //offset = mix(offset + offset2, 0.0, intensity);
     offset = mix(offset, 0.0, intensity);
     FragColor = texture(movieTexture, TexCoords + offset);

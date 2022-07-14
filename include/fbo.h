@@ -23,8 +23,8 @@ class DoubleFbo {
  public:
   DoubleFbo(int width, int height, int internalformat = GL_RGB);
 
-  Fbo& get_current();
-  Fbo& get_last();
+  Fbo& get_front();
+  Fbo& get_back();
   void swap();
 
  private:

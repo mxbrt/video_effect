@@ -28,13 +28,6 @@ const int N_FINGERS = 10;
 using namespace mpv_glsl;
 using namespace std;
 
-vector<float> quadVertices = {  // vertex attributes for a quad that fills
-                                // the entire screen in Normalized Device
-                                // Coordinates. positions   // texCoords
-    -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f,
-
-    -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f};
-
 struct options {
     int shader_reload;
     string media_path;
@@ -88,7 +81,8 @@ int main(int argc, char *argv[]) {
         Shader("shaders/vert.glsl", "shaders/frag.glsl", effect_macro);
     auto input_shader = Shader("shaders/vert.glsl", "shaders/input.glsl");
 
-    auto quad_vbo = Vbo(quadVertices);
+    auto empty_vec = vector<float>();
+    auto quad_vbo = Vbo(empty_vec);
     // framebuffer configuration
     DoubleFbo mpv_fbos = DoubleFbo(width, height);
     DoubleFbo effect_fbos = DoubleFbo(width, height, GL_R32F);
@@ -144,9 +138,13 @@ int main(int argc, char *argv[]) {
                     }
                     break;
                 default:
-                    player_event = player.run(&window_ctx, event,
-                                              mpv_fbos.get_current().fbo,
-                                              player_target_tick);
+                    player_event =
+                        player.run(&window_ctx, event, mpv_fbos.get_back().fbo,
+                                   player_target_tick);
+                    if (player_target_tick > last_player_swap) {
+                        player_target_tick = last_player_swap;
+                        mpv_fbos.swap();
+                    }
                     if (player_event == PLAYER_IDLE) {
                         auto media_path = shuffler.get();
                         const char *cmd[] = {"loadfile", media_path.c_str(),
@@ -166,12 +164,6 @@ int main(int argc, char *argv[]) {
         }
 
         uint64_t ticks = SDL_GetTicks64();
-        if (ticks >= player_target_tick &&
-            player_target_tick > last_player_swap) {
-            last_player_swap = ticks;
-            mpv_fbos.swap();
-        }
-
         uint32_t buttons;
         SDL_PumpEvents();  // make sure we have the latest input state.
         float fingers_uniform[N_FINGERS][3] = {};
@@ -225,12 +217,10 @@ int main(int argc, char *argv[]) {
 
         effect_fbos.swap();
 
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
         glUseProgram(input_shader.program);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, effect_fbos.get_last().texture.id);
-        glBindFramebuffer(GL_FRAMEBUFFER, effect_fbos.get_current().fbo);
+        glBindTexture(GL_TEXTURE_2D, effect_fbos.get_back().texture.id);
+        glBindFramebuffer(GL_FRAMEBUFFER, effect_fbos.get_front().fbo);
         glDisable(GL_DEPTH_TEST);
 
         glUniform1i(glGetUniformLocation(input_shader.program, "effectTexture"),
@@ -246,13 +236,15 @@ int main(int argc, char *argv[]) {
         glUniform1f(glGetUniformLocation(input_shader.program, "effectFadeOut"),
                     gui_data.effect_fade_out);
         glad_glBindVertexArray(quad_vbo.vao);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         glUseProgram(effect_shader.program);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, mpv_fbos.get_current().texture.id);
+        glBindTexture(GL_TEXTURE_2D, mpv_fbos.get_front().texture.id);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, effect_fbos.get_current().texture.id);
+        glBindTexture(GL_TEXTURE_2D, effect_fbos.get_front().texture.id);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
         glUniform1i(glGetUniformLocation(effect_shader.program, "movieTexture"),
@@ -267,6 +259,8 @@ int main(int argc, char *argv[]) {
                     ticks / 1000.0);
 
         glad_glBindVertexArray(quad_vbo.vao);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         gui.render(gui_data);
