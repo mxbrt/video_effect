@@ -16,6 +16,7 @@ precision highp float;
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+precision mediump float;
 
 //
 // Description : GLSL 2D simplex noise function
@@ -94,13 +95,14 @@ void effect(float intensity)
     offset = mix(offset, 0.0, intensity);
     FragColor = texture(movieTexture, TexCoords + offset);
 }
-precision mediump float;
 #endif
 
 #ifdef Voronoi
+precision highp float;
 vec2 random2( vec2 p ) {
     return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);
 }
+precision mediump float;
 
 void effect(float intensity) {
     vec2 st = TexCoords;
@@ -179,7 +181,6 @@ void effect(float intensity)
     FragColor = vec4(vec3(intensity), 1.0);
 }
 #endif
-
 
 void main() {
     float intensity = clamp(texture(effectTexture, TexCoords).x, 0.0, 1.0);

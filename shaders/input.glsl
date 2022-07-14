@@ -5,6 +5,7 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 #define N_FINGERS 3
+#define TARGET_DELTA 16.6666
 
 uniform sampler2D effectTexture;
 uniform vec2 resolution;
@@ -12,6 +13,7 @@ uniform vec3[N_FINGERS] fingers;
 uniform float fingerRadius;
 uniform float effectFadeIn;
 uniform float effectFadeOut;
+uniform float delta;
 
 void main()
 {
@@ -30,5 +32,6 @@ void main()
     float effectFade = sqrt(fingerDist) < fingerRadius ?
         effectFadeIn * 0.2 :
         -effectFadeOut * 0.1;
+    effectFade *= (delta / TARGET_DELTA);
     FragColor.r = clamp(lastIntensity + effectFade, 0.0, 3.0);
 }

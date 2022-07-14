@@ -113,6 +113,7 @@ int main(int argc, char *argv[]) {
 
     uint64_t player_target_tick = 1;
     uint64_t last_player_swap = 0;
+    uint64_t last_render_tick = SDL_GetTicks64();
 
     // Start API server
     auto api = Api(opts.media_path, opts.website_path);
@@ -215,6 +216,8 @@ int main(int argc, char *argv[]) {
             input_shader.reload();
         }
 
+        uint64_t delta = ticks - last_render_tick;
+        last_render_tick = ticks;
         effect_fbos.swap();
 
         glUseProgram(input_shader.program);
@@ -235,6 +238,7 @@ int main(int argc, char *argv[]) {
                     gui_data.effect_fade_in);
         glUniform1f(glGetUniformLocation(input_shader.program, "effectFadeOut"),
                     gui_data.effect_fade_out);
+        glUniform1f(glGetUniformLocation(input_shader.program, "delta"), delta);
         glad_glBindVertexArray(quad_vbo.vao);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
