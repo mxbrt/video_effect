@@ -29,8 +29,9 @@ void main()
     }
 
     float lastIntensity = texture(effectTexture, TexCoords).r;
-    float effectFade = sqrt(fingerDist) < fingerRadius ?
-        effectFadeIn * 0.2 :
+    float dist = sqrt(fingerDist);
+    highp float effectFade = dist < fingerRadius ?
+        effectFadeIn * (fingerRadius - dist) :
         -effectFadeOut * 0.1;
     effectFade *= (delta / TARGET_DELTA);
     FragColor.r = clamp(lastIntensity + effectFade, 0.0, 3.0);
