@@ -70,6 +70,18 @@ void parse_args(int argc, char *argv[]) {
     }
 }
 
+void load_playlist(Player &player, Shuffler &shuffler) {
+    const char *stop_cmd[] = {"stop", "0", NULL};
+    player.cmd(stop_cmd);
+    auto files = shuffler.get();
+    for (const auto &file : files) {
+        const char *cmd[] = {"loadfile", file.c_str(), "append", NULL};
+        player.cmd(cmd);
+    }
+    const char *play_cmd[] = {"playlist-play-index", "0", NULL};
+    player.cmd(play_cmd);
+}
+
 int main(int argc, char *argv[]) {
     parse_args(argc, argv);
     struct window_ctx window_ctx;
@@ -82,19 +94,29 @@ int main(int argc, char *argv[]) {
     auto input_shader = Shader("shaders/vert.glsl", "shaders/input.glsl");
 
     auto empty_vec = vector<float>();
-    auto quad_vbo = Vbo(empty_vec);
+    auto vbo = Vbo(empty_vec);
     // framebuffer configuration
     DoubleFbo mpv_fbos = DoubleFbo(width, height);
     DoubleFbo effect_fbos = DoubleFbo(width, height, GL_R32F);
 
+    // Noise textures
+    // FIXME: cleanup render pass resources
+    auto simplex_noise_texture = Texture(width, height, GL_R32F);
+    {
+        auto noise_shader =
+            Shader("shaders/vert.glsl", "shaders/noise.glsl", effect_macro);
+        simplex_noise_texture.render(noise_shader);
+    }
+
     // gui values
-    vector<EffectItem> effects = {
-        {.name = "Swirl", .is_selected = true},
-        {.name = "Blur", .is_selected = false},
-        {.name = "Pixel", .is_selected = false},
-        {.name = "Voronoi", .is_selected = false},
-        {.name = "Debug", .is_selected = false},
-    };
+    vector<EffectItem>
+        effects = {
+            {.name = "Swirl", .is_selected = true},
+            {.name = "Blur", .is_selected = false},
+            {.name = "Pixel", .is_selected = false},
+            {.name = "Voronoi", .is_selected = false},
+            {.name = "Debug", .is_selected = false},
+        };
     size_t default_effect = 0;
     auto gui_data = GuiData{.finger_radius = 0.20,
                             .effect_fade_in = 0.2,
@@ -107,9 +129,6 @@ int main(int argc, char *argv[]) {
     // Play this file.
     auto shuffler =
         Shuffler({opts.media_path + "video", opts.media_path + "video"});
-    auto video_path = shuffler.get();
-    const char *cmd[] = {"loadfile", video_path.c_str(), NULL};
-    player.cmd(cmd);
 
     uint64_t player_target_tick = 1;
     uint64_t last_player_swap = 0;
@@ -147,11 +166,9 @@ int main(int argc, char *argv[]) {
                         mpv_fbos.swap();
                     }
                     if (player_event == PLAYER_IDLE) {
-                        auto media_path = shuffler.get();
-                        const char *cmd[] = {"loadfile", media_path.c_str(),
-                                             NULL};
-                        player.cmd(cmd);
-                        api.set_play_cmd(media_path.c_str());
+                        //  FIXME: set api play cmd
+                        // api.set_play_cmd(media_path.c_str());
+                        load_playlist(player, shuffler);
                         player_event = PLAYER_NO_EVENT;
                     }
                     break;
@@ -160,7 +177,8 @@ int main(int argc, char *argv[]) {
 
         auto play_command = api.get_play_cmd();
         if (play_command) {
-            const char *cmd[] = {"loadfile", play_command->c_str(), NULL};
+            const char *cmd[] = {"loadfile", play_command->c_str(), "replace",
+                                 NULL};
             player.cmd(cmd);
         }
 
@@ -239,7 +257,7 @@ int main(int argc, char *argv[]) {
         glUniform1f(glGetUniformLocation(input_shader.program, "effectFadeOut"),
                     gui_data.effect_fade_out);
         glUniform1f(glGetUniformLocation(input_shader.program, "delta"), delta);
-        glad_glBindVertexArray(quad_vbo.vao);
+        glBindVertexArray(vbo.vao);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -249,12 +267,17 @@ int main(int argc, char *argv[]) {
         glBindTexture(GL_TEXTURE_2D, mpv_fbos.get_front().texture.id);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, effect_fbos.get_front().texture.id);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, simplex_noise_texture.id);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
         glUniform1i(glGetUniformLocation(effect_shader.program, "movieTexture"),
                     0);
         glUniform1i(
             glGetUniformLocation(effect_shader.program, "effectTexture"), 1);
+        glUniform1i(
+            glGetUniformLocation(effect_shader.program, "simplexNoiseTexture"),
+            2);
         glUniform2f(glGetUniformLocation(effect_shader.program, "resolution"),
                     width, height);
         glUniform1f(glGetUniformLocation(effect_shader.program, "amount"),
@@ -262,7 +285,7 @@ int main(int argc, char *argv[]) {
         glUniform1f(glGetUniformLocation(effect_shader.program, "time"),
                     ticks / 1000.0);
 
-        glad_glBindVertexArray(quad_vbo.vao);
+        glBindVertexArray(vbo.vao);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawArrays(GL_TRIANGLES, 0, 6);

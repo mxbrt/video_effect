@@ -36,8 +36,7 @@ static void on_mpv_render_update(void *) {
 
 Player::Player(struct window_ctx *ctx) {
     mpv = mpv_create();
-    //mpv_set_option_string(mpv, "msg-level", "all=trace");
-    mpv_request_log_messages(mpv, "terminal-default");
+    //mpv_request_log_messages(mpv, "debug");
     if (!mpv) die("context init failed");
     // Some minor options can only be set before mpv_initialize().
     if (mpv_initialize(mpv) < 0) die("mpv init failed");
@@ -165,8 +164,6 @@ enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
             }
             if (mp_event->event_id == MPV_EVENT_IDLE) {
                 result = PLAYER_IDLE;
-            }
-            if (mp_event->event_id == MPV_EVENT_START_FILE) {
             }
             printf("event: %s\n", mpv_event_name(mp_event->event_id));
         }

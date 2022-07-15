@@ -9,8 +9,7 @@ using namespace std;
 class Shuffler {
  public:
   Shuffler(const vector<string>& directories);
-
-  string get();
+  vector<string> get();
 
  private:
   void read_directories();

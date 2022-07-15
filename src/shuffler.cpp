@@ -14,7 +14,6 @@ Shuffler::Shuffler(const vector<string>& directories)
     unsigned seed = chrono::system_clock::now().time_since_epoch().count();
     rng = default_random_engine{seed};
     read_directories();
-    shuffle();
 }
 
 void Shuffler::read_directories() {
@@ -31,14 +30,8 @@ void Shuffler::read_directories() {
 
 void Shuffler::shuffle() { std::shuffle(begin(files), end(files), rng); }
 
-string Shuffler::get() {
-    auto result = files[cur_idx];
-    cur_idx++;
-    if (cur_idx >= files.size()) {
-        cur_idx = 0;
-        read_directories();
-        shuffle();
-    }
-    return result;
+vector<string> Shuffler::get() {
+    shuffle();
+    return files;
 }
 }  // namespace mpv_glsl
