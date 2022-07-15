@@ -1,5 +1,7 @@
 precision mediump float;
 
+#define PI 3.1415926535897932384626433832795
+
 out vec4 FragColor;
 
 in vec2 TexCoords;
@@ -104,6 +106,26 @@ void effect(float intensity)
 {
     FragColor = vec4(vec3(intensity), 1.0);
     //FragColor = texture(simplexNoiseTexture, TexCoords);
+}
+#endif
+
+#ifdef Brushed
+void effect(float intensity)
+{
+    vec4 color = vec4(0.0);
+    float size = 5.0;
+    float step_size = (resolution.x / size) / resolution.x;
+    vec2 pixel_size = 1.0 / resolution;
+    float t = time * 0.0001;
+    vec2 noise = vec2(texture(simplexNoiseTexture, TexCoords * 10.0 + t).r,
+                      texture(simplexNoiseTexture, TexCoords * 30.0 + t).r);
+    for (float i = 0.0; i < size; ++i) {
+        float y = TexCoords.x - TexCoords.y;
+        vec2 coords = vec2(step_size * i, y) + noise * 0.001;
+        color += texture(movieTexture, coords);
+    }
+    vec4 blurred_color = color / size;
+    FragColor = blurred_color;
 }
 #endif
 

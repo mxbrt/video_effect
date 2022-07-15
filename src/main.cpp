@@ -109,14 +109,14 @@ int main(int argc, char *argv[]) {
     }
 
     // gui values
-    vector<EffectItem>
-        effects = {
-            {.name = "Swirl", .is_selected = true},
-            {.name = "Blur", .is_selected = false},
-            {.name = "Pixel", .is_selected = false},
-            {.name = "Voronoi", .is_selected = false},
-            {.name = "Debug", .is_selected = false},
-        };
+    vector<EffectItem> effects = {
+        {.name = "Swirl", .is_selected = true},
+        {.name = "Blur", .is_selected = false},
+        {.name = "Pixel", .is_selected = false},
+        {.name = "Voronoi", .is_selected = false},
+        {.name = "Brushed", .is_selected = false},
+        {.name = "Debug", .is_selected = false},
+    };
     size_t default_effect = 0;
     auto gui_data = GuiData{.finger_radius = 0.20,
                             .effect_fade_in = 0.2,
