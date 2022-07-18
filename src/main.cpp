@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
     // Play this file.
     auto shuffler =
-        Shuffler({opts.media_path + "video", opts.media_path + "video"});
+        Shuffler({opts.media_path + "video", opts.media_path + "image"});
 
     uint64_t player_target_tick = 1;
     uint64_t last_player_swap = 0;

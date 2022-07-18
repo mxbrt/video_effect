@@ -127,7 +127,7 @@ Player::Player(struct window_ctx *ctx) {
     //  users which run OpenGL on a different thread.)
     mpv_render_context_set_update_callback(mpv_gl, on_mpv_render_update, NULL);
 
-    mpv_set_property_string(mpv, "image-display-duration", "15");
+    mpv_set_property_string(mpv, "image-display-duration", "10");
     }
 
 Player::~Player() {
