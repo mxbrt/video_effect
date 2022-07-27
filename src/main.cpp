@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <mpv/client.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -70,22 +71,15 @@ void parse_args(int argc, char *argv[]) {
     }
 }
 
-void load_playlist(Player &player, Shuffler &shuffler) {
-    const char *stop_cmd[] = {"stop", "0", NULL};
-    player.cmd(stop_cmd);
-    auto files = shuffler.get();
-    for (const auto &file : files) {
-        const char *cmd[] = {"loadfile", file.c_str(), "append", NULL};
-        player.cmd(cmd);
-    }
-    const char *play_cmd[] = {"playlist-play-index", "0", NULL};
-    player.cmd(play_cmd);
-}
-
 int main(int argc, char *argv[]) {
     parse_args(argc, argv);
     struct window_ctx window_ctx;
-    auto player = Player(&window_ctx);
+    auto shuffler =
+        Shuffler({opts.media_path + "video", opts.media_path + "image"});
+
+    // Start API server
+    auto api = Api(opts.media_path, opts.website_path);
+    auto player = Player(&window_ctx, opts.media_path + "video", api);
     auto gui = Gui(window_ctx);
 
     auto effect_macro = "#version 300 es\n#define Swirl\n";
@@ -118,28 +112,23 @@ int main(int argc, char *argv[]) {
         {.name = "Debug", .is_selected = false},
     };
     size_t default_effect = 0;
-    auto gui_data = GuiData{.finger_radius = 0.20,
-                            .effect_fade_in = 0.2,
-                            .effect_fade_out = 0.1,
-                            .effect_amount = 10.0,
-                            .effects = effects,
-                            .selected_effect = default_effect};
+    auto gui_data = GuiData{
+        .finger_radius = 0.20,
+        .effect_fade_in = 0.2,
+        .effect_amount = 10.0,
+        .effects = effects,
+        .selected_effect = default_effect,
+        .playback_duration = 20,
+    };
     size_t loaded_effect = default_effect;
-
-    // Play this file.
-    auto shuffler =
-        Shuffler({opts.media_path + "video", opts.media_path + "image"});
 
     uint64_t player_target_tick = 1;
     uint64_t last_player_swap = 0;
     uint64_t last_render_tick = SDL_GetTicks64();
 
-    // Start API server
-    auto api = Api(opts.media_path, opts.website_path);
-
+    bool reset_effect = false;
     // Touch event state
     while (1) {
-        enum player_event player_event = PLAYER_NO_EVENT;
         SDL_Event event;
         bool imgui_event = false;
         while (SDL_PollEvent(&event)) {
@@ -152,34 +141,24 @@ int main(int argc, char *argv[]) {
                 case SDL_WINDOWEVENT:
                     break;
                 case SDL_KEYDOWN:
-                    if (event.key.keysym.sym == SDLK_SPACE) {
-                        const char *cmd_pause[] = {"cycle", "pause", NULL};
-                        player.cmd(cmd_pause);
-                    }
+                    break;
+                case SDL_MOUSEMOTION:
                     break;
                 default:
-                    player_event =
-                        player.run(&window_ctx, event, mpv_fbos.get_back().fbo,
-                                   player_target_tick);
+                    player.run(&window_ctx, event, mpv_fbos.get_back().fbo,
+                               player_target_tick, gui_data.playback_duration,
+                               reset_effect);
                     if (player_target_tick > last_player_swap) {
                         player_target_tick = last_player_swap;
                         mpv_fbos.swap();
-                    }
-                    if (player_event == PLAYER_IDLE) {
-                        //  FIXME: set api play cmd
-                        // api.set_play_cmd(media_path.c_str());
-                        load_playlist(player, shuffler);
-                        player_event = PLAYER_NO_EVENT;
                     }
                     break;
             }
         }
 
-        auto play_command = api.get_play_cmd();
-        if (play_command) {
-            const char *cmd[] = {"loadfile", play_command->c_str(), "replace",
-                                 NULL};
-            player.cmd(cmd);
+        auto api_play_file = api.get_play_cmd();
+        if (api_play_file) {
+            player.play_file(*api_play_file);
         }
 
         uint64_t ticks = SDL_GetTicks64();
@@ -254,8 +233,9 @@ int main(int argc, char *argv[]) {
                     gui_data.finger_radius);
         glUniform1f(glGetUniformLocation(input_shader.program, "effectFadeIn"),
                     gui_data.effect_fade_in);
-        glUniform1f(glGetUniformLocation(input_shader.program, "effectFadeOut"),
-                    gui_data.effect_fade_out);
+        glUniform1i(glGetUniformLocation(input_shader.program, "reset"),
+                    (int)reset_effect);
+        reset_effect = false;
         glUniform1f(glGetUniformLocation(input_shader.program, "delta"), delta);
         glBindVertexArray(vbo.vao);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);

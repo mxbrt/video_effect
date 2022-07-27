@@ -41,7 +41,7 @@ void Gui::render(struct GuiData& data) {
     ImGui::SliderFloat("Effect strength", &data.effect_amount, 0.0f, 100.0f);
     ImGui::SliderFloat("Touch Radius", &data.finger_radius, 0.0f, 1.0f);
     ImGui::SliderFloat("Touch Fade In", &data.effect_fade_in, 0.0f, 1.0f);
-    ImGui::SliderFloat("Touch Fade Out", &data.effect_fade_out, 0.0f, 1.0f);
+    ImGui::SliderInt("Playback Duration", &data.playback_duration, 1, 180);
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

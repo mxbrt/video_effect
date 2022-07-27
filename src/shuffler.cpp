@@ -22,9 +22,9 @@ void Shuffler::read_directories() {
         for (const auto& f : filesystem::directory_iterator(directory)) {
             files.push_back(f.path());
         }
-        if (files.size() == 0) {
-            die("Expected at least one file in %s\n", directory.c_str());
-        }
+    }
+    if (files.size() == 0) {
+        die("Expected at least one media file\n");
     }
 }
 

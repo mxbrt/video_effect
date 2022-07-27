@@ -12,7 +12,7 @@ uniform vec2 resolution;
 uniform vec3[N_FINGERS] fingers;
 uniform float fingerRadius;
 uniform float effectFadeIn;
-uniform float effectFadeOut;
+uniform int reset;
 uniform float delta;
 
 void main()
@@ -28,11 +28,18 @@ void main()
         fingerDist = min(fingerDist, abs(dot(diff, diff)));
     }
 
-    float lastIntensity = texture(effectTexture, TexCoords).r;
-    float dist = sqrt(fingerDist);
-    highp float effectFade = dist < fingerRadius ?
-        effectFadeIn * (fingerRadius - dist) :
-        -effectFadeOut * 0.1;
-    effectFade *= (delta / TARGET_DELTA);
-    FragColor.r = clamp(lastIntensity + effectFade, 0.0, 3.0);
+    if (reset > 0) {
+        FragColor.r = 0.0;
+    } else {
+        float lastIntensity = texture(effectTexture, TexCoords).r;
+        float dist = sqrt(fingerDist);
+        if (dist < fingerRadius) {
+            highp float effectFade = effectFadeIn * (fingerRadius - dist);
+            effectFade *= (delta / TARGET_DELTA);
+            FragColor.r = clamp(lastIntensity + effectFade, 0.0, 3.0);
+        } else {
+            FragColor.r = lastIntensity;
+        }
+    }
+
 }

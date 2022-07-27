@@ -9,7 +9,9 @@ namespace mpv_glsl {
 using namespace std;
 using namespace httplib;
 Api::Api(const string& media_path, const string& website_path)
-    : media_path(media_path), website_path(website_path) {
+    : media_path(media_path),
+      website_path(website_path),
+      command_pending(false) {
   server_thread = thread(&Api::server_run, this);
 }
 Api::~Api() {
@@ -29,12 +31,13 @@ void Api::server_run() {
   server.Post("/play", [this](const Request& req, Response& res) {
     scoped_lock lock(command_mutex);
     command_pending = true;
-    command = media_path + req.body;
+    command = req.body;
+    printf("Got play cmd %s\n", command.c_str());
   });
 
   server.Get("/play", [this](const Request& req, Response& res) {
     scoped_lock lock(command_mutex);
-    res.body = command.substr(media_path.size());
+    res.body = command;
   });
 
   server.listen("localhost", 8000);

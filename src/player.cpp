@@ -4,6 +4,7 @@
 #include <mpv/client.h>
 #include <mpv/render.h>
 #include <mpv/render_gl.h>
+#include <sys/types.h>
 #include <wayland-client.h>
 
 #include <cstdint>
@@ -14,11 +15,15 @@
 #include "SDL_syswm.h"
 #include "SDL_timer.h"
 #include "SDL_version.h"
+#include "shuffler.h"
 #include "util.h"
 namespace mpv_glsl {
 
 static uint32_t wakeup_on_mpv_render_update;
 static uint32_t wakeup_on_mpv_events;
+
+static const uint64_t mpv_userdata_duration = 1;
+static const uint64_t mpv_userdata_filename = 2;
 
 static void *get_proc_address_mpv(void *fn_ctx, const char *name) {
     return SDL_GL_GetProcAddress(name);
@@ -34,15 +39,17 @@ static void on_mpv_render_update(void *) {
     SDL_PushEvent(&event);
 }
 
-Player::Player(struct window_ctx *ctx) {
+Player::Player(struct window_ctx *ctx, const std::string &video_path, Api &api)
+    : api(api), file_loaded(false), video_path(video_path) {
     mpv = mpv_create();
-    //mpv_request_log_messages(mpv, "debug");
+    // mpv_request_log_messages(mpv, "debug");
     if (!mpv) die("context init failed");
     // Some minor options can only be set before mpv_initialize().
     if (mpv_initialize(mpv) < 0) die("mpv init failed");
 
     mpv_set_option_string(mpv, "hwdec", "h264-drm-copy");
     mpv_set_option_string(mpv, "video-sync", "audio");
+    mpv_set_option_string(mpv, "shuffle", "");
 
     // Jesus Christ SDL, you suck!
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "no");
@@ -128,27 +135,30 @@ Player::Player(struct window_ctx *ctx) {
     mpv_render_context_set_update_callback(mpv_gl, on_mpv_render_update, NULL);
 
     mpv_set_property_string(mpv, "image-display-duration", "10");
-    }
+}
 
 Player::~Player() {
     mpv_render_context_free(mpv_gl);
     mpv_detach_destroy(mpv);
 }
 
-void Player::cmd(const char **cmd) {
-    mpv_command_async(mpv, 0, cmd);
+void Player::load_playlist() {
+    const char *load_cmd[] = {"loadfile", video_path.c_str(), "append", NULL};
+    mpv_command_async(mpv, 0, load_cmd);
+    const char *play_cmd[] = {"playlist-play-index", "0", NULL};
+    mpv_command_async(mpv, 0, play_cmd);
 }
 
-enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
-                              unsigned int fbo, uint64_t &draw_target_tick) {
-    enum player_event result = PLAYER_NO_EVENT;
-    bool redraw = false;
-    // Happens when there is new work for the render thread
-    // (such as rendering a new video frame or redrawing it).
-    if (event.type == wakeup_on_mpv_render_update) {
-        uint64_t flags = mpv_render_context_update(mpv_gl);
-        if (flags & MPV_RENDER_UPDATE_FRAME) redraw = true;
-    }
+void Player::play_file(const std::string &file_name) {
+    auto absolute_path = video_path + "/" + file_name;
+    const char *loadfile_cmd[] = {"loadfile", absolute_path.c_str(), "replace",
+                                  NULL};
+    mpv_command_async(mpv, 0, loadfile_cmd);
+}
+
+void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
+                 uint64_t &draw_target_tick, int playback_duration,
+                 bool &playlist_next) {
     // Happens when at least 1 new event is in the mpv event
     // queue.
     if (event.type == wakeup_on_mpv_events) {
@@ -163,12 +173,62 @@ enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
                 continue;
             }
             if (mp_event->event_id == MPV_EVENT_IDLE) {
-                result = PLAYER_IDLE;
+                // TODO: shuffle on second load
+                load_playlist();
             }
-            printf("event: %s\n", mpv_event_name(mp_event->event_id));
+            if (mp_event->event_id == MPV_EVENT_FILE_LOADED) {
+                mpv_get_property_async(mpv, mpv_userdata_duration, "duration",
+                                       MPV_FORMAT_INT64);
+                mpv_get_property_async(mpv, mpv_userdata_filename, "filename",
+                                       MPV_FORMAT_STRING);
+                file_loaded = true;
+            }
+            if (mp_event->event_id == MPV_EVENT_PLAYBACK_RESTART) {
+                if (file_loaded) {
+                    file_loaded = false;
+                    playlist_next = true;
+                }
+            }
+            if (mp_event->event_id == MPV_EVENT_GET_PROPERTY_REPLY) {
+                auto event_property =
+                    static_cast<mpv_event_property *>(mp_event->data);
+                if (mp_event->reply_userdata == mpv_userdata_duration) {
+                    if (event_property->format != MPV_FORMAT_INT64 ||
+                        strcmp(event_property->name, "duration")) {
+                        die("Unexpected property reply\n");
+                    }
+                    auto video_duration =
+                        *static_cast<int64_t *>(event_property->data);
+                    int64_t loops = (playback_duration / video_duration) - 1;
+                    loops = loops < 0 ? 0 : loops;
+                    mpv_set_property_async(mpv, 0, "loop", MPV_FORMAT_INT64,
+                                           &loops);
+                } else if (mp_event->reply_userdata == mpv_userdata_filename) {
+                    if (event_property->format != MPV_FORMAT_STRING ||
+                        strcmp(event_property->name, "filename")) {
+                        die("Unexpected property reply\n");
+                    }
+                    auto filename = *static_cast<char **>(event_property->data);
+                    printf("playing %s\n", filename);
+                    api.set_play_cmd(filename);
+                    mpv_free(event_property->data);
+                } else {
+                    die("Unknown reply_userdata %lu\n",
+                        mp_event->reply_userdata);
+                }
+            }
+            printf("[mpv] event: %s\n", mpv_event_name(mp_event->event_id));
         }
+
+        return;
     }
-    if (redraw) {
+    if (event.type == wakeup_on_mpv_render_update) {
+        // Happens when there is new work for the render thread
+        // (such as rendering a new video frame or redrawing it).
+        uint64_t flags = mpv_render_context_update(mpv_gl);
+        if (!(flags & MPV_RENDER_UPDATE_FRAME)) {
+            return;
+        }
         int w, h;
         SDL_GetWindowSize(ctx->window, &w, &h);
 
@@ -180,14 +240,13 @@ enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
         int mpv_flip_y = 1;
         int mpv_block_for_target_time = 0;
 
-        mpv_render_param params[] = {
-            {MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
-            // Flip rendering (needed due to
-            // flipped GL coordinate system).
-            {MPV_RENDER_PARAM_FLIP_Y, &mpv_flip_y},
-            {MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME,
-             &mpv_block_for_target_time},
-            {MPV_RENDER_PARAM_INVALID, NULL}};
+        mpv_render_param params[] = {{MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
+                                     // Flip rendering (needed due to
+                                     // flipped GL coordinate system).
+                                     {MPV_RENDER_PARAM_FLIP_Y, &mpv_flip_y},
+                                     {MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME,
+                                      &mpv_block_for_target_time},
+                                     {MPV_RENDER_PARAM_INVALID, NULL}};
 
         // See render_gl.h on what OpenGL environment mpv expects, and
         // other API details.
@@ -199,6 +258,6 @@ enum player_event Player::run(struct window_ctx *ctx, SDL_Event event,
         draw_target_tick = SDL_GetTicks64() +
                            (mpv_next_frame_info.target_time - cur_time) / 1000;
     }
-    return result;
+    return;
 }
 }  // namespace mpv_glsl
