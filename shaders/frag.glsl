@@ -116,7 +116,7 @@ void effect(float intensity)
 void effect(float intensity)
 {
     vec4 color = vec4(0.0);
-    float size = 5.0;
+    float size = 3.0;
     float step_size = (resolution.x / size) / resolution.x;
     vec2 pixel_size = 1.0 / resolution;
     float t = time * 0.0001;
@@ -127,8 +127,9 @@ void effect(float intensity)
         vec2 coords = vec2(step_size * i, y) + noise * 0.001;
         color += texture(movieTexture, coords);
     }
+    vec4 orig_color = texture(movieTexture, TexCoords);
     vec4 blurred_color = color / size;
-    FragColor = blurred_color;
+    FragColor = mix(blurred_color, orig_color, intensity);
 }
 #endif
 
