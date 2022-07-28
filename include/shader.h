@@ -31,6 +31,4 @@ class Shader {
   int src_mtime;
   string macros;
   };
-
-void shader_reload(struct shader* s);
 }  // namespace mpv_glsl

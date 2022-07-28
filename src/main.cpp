@@ -82,10 +82,11 @@ int main(int argc, char *argv[]) {
     auto player = Player(&window_ctx, opts.media_path + "video", api);
     auto gui = Gui(window_ctx);
 
-    auto effect_macro = "#version 300 es\n#define Swirl\n";
+    auto shader_macro = "#version 300 es\n#define Swirl\n";
     auto effect_shader =
-        Shader("shaders/vert.glsl", "shaders/frag.glsl", effect_macro);
-    auto input_shader = Shader("shaders/vert.glsl", "shaders/input.glsl");
+        Shader("shaders/vert.glsl", "shaders/frag.glsl", shader_macro);
+    auto input_shader =
+        Shader("shaders/vert.glsl", "shaders/input.glsl", shader_macro);
 
     auto empty_vec = vector<float>();
     auto vbo = Vbo(empty_vec);
@@ -98,7 +99,7 @@ int main(int argc, char *argv[]) {
     auto simplex_noise_texture = Texture(width, height, GL_R32F);
     {
         auto noise_shader =
-            Shader("shaders/vert.glsl", "shaders/noise.glsl", effect_macro);
+            Shader("shaders/vert.glsl", "shaders/noise.glsl", shader_macro);
         simplex_noise_texture.render(noise_shader);
     }
 
@@ -205,6 +206,7 @@ int main(int argc, char *argv[]) {
             stringstream ss;
             ss << "#version 300 es\n#define " << effect.name << "\n";
             effect_shader.set_macros(ss.str());
+            input_shader.set_macros(ss.str());
             loaded_effect = gui_data.selected_effect;
         }
 

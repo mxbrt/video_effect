@@ -35,7 +35,10 @@ void effect(float intensity) {
     vec3 color = vec3(.0);
 
     // Scale
-    float scale = 1.0 + (100.0 - amount) + 1000.0 * intensity;
+    //float scale = 1.0 + ((100.0 - amount) + 100.0 * intensity);
+    float step_intensity = floor(intensity * 100.0) / 100.0;
+    float scale_factor = amount - (amount * step_intensity) + 1.0;
+    vec2 scale = resolution / scale_factor;
     st *= scale;
 
     // Tile the space

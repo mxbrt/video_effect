@@ -34,7 +34,11 @@ void main()
         float lastIntensity = texture(effectTexture, TexCoords).r;
         float dist = sqrt(fingerDist);
         if (dist < fingerRadius) {
+#ifdef Voronoi
+            highp float effectFade = effectFadeIn;
+#else
             highp float effectFade = effectFadeIn * (fingerRadius - dist);
+#endif
             effectFade *= (delta / TARGET_DELTA);
             FragColor.r = clamp(lastIntensity + effectFade, 0.0, 3.0);
         } else {
