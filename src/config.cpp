@@ -22,11 +22,11 @@ void from_json(const json& j, EffectConfig& cfg) {
 Config::Config(const string& json_path) {
   std::ifstream f(json_path);
   json j = json::parse(f);
-  data = j.get<unordered_map<string, EffectConfig>>();
+  data = j.get<map<string, EffectConfig>>();
   selected_effect = data.begin()->first;
 }
 
-unordered_map<string, EffectConfig>& Config::get() { return data; }
+map<string, EffectConfig>& Config::get() { return data; }
 
 void Config::save() {
   // TODO

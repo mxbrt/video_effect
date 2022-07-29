@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <unordered_map>
+#include <map>
 
 namespace mpv_glsl {
 using namespace std;
@@ -15,7 +15,7 @@ class Config {
  public:
   Config(const string& json_path);
 
-  unordered_map<string, EffectConfig>& get();
+  map<string, EffectConfig>& get();
   void save();
 
   EffectConfig& get_selected_effect();
@@ -23,7 +23,7 @@ class Config {
   void set_selected_name(const string& name);
 
  private:
-  unordered_map<string, EffectConfig> data;
+  map<string, EffectConfig> data;
   string selected_effect;
 };
 }  // namespace mpv_glsl
