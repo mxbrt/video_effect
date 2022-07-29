@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 
+#include "config.h"
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "player.h"
@@ -9,24 +10,10 @@
 namespace mpv_glsl {
 using namespace std;
 
-struct EffectItem {
-  const char* name;
-  bool is_selected;
-};
-
-struct GuiData {
-  float finger_radius;
-  float effect_fade_in;
-  float effect_amount;
-  vector<EffectItem> effects;
-  size_t selected_effect;
-  int playback_duration;
-};
-
 class Gui {
  public:
   Gui(window_ctx& window_ctx);
   bool process_event(SDL_Event& event);
-  void render(struct GuiData& data);
+  void render(Config& config, int& playback_duration);
 };
 }  // namespace mpv_glsl

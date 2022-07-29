@@ -20,28 +20,32 @@ bool Gui::process_event(SDL_Event& event) {
   return io.WantCaptureMouse;
 }
 
-void Gui::render(struct GuiData& data) {
+void Gui::render(Config& config, int& playback_duration) {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame();
   ImGui::NewFrame();
 
-  if (ImGui::Begin("Settings")) {
-    ImGui::ListBoxHeader("Effect", data.effects.size());
+  auto& config_map = config.get();
 
-    for (size_t i = 0; i < data.effects.size(); i++) {
-      auto& effect = data.effects[i];
-      if (ImGui::Selectable(effect.name, effect.is_selected)) {
-        data.effects[data.selected_effect].is_selected = false;
-        data.selected_effect = i;
-        effect.is_selected = true;
+  if (ImGui::Begin("config")) {
+    ImGui::ListBoxHeader("Effect", config_map.size());
+    auto selected_name = config.get_selected_name();
+    for (auto const& kv : config_map) {
+      auto& effect_name = kv.first;
+      bool is_selected = effect_name == selected_name;
+      if (ImGui::Selectable(effect_name.c_str(), is_selected)) {
+        config.set_selected_name(effect_name);
+        selected_name = effect_name;
       }
     }
     ImGui::ListBoxFooter();
 
+    auto& data = config.get_selected_effect();
+
     ImGui::SliderFloat("Effect strength", &data.effect_amount, 0.0f, 100.0f);
     ImGui::SliderFloat("Touch Radius", &data.finger_radius, 0.0f, 1.0f);
     ImGui::SliderFloat("Touch Fade In", &data.effect_fade_in, 0.0f, 1.0f);
-    ImGui::SliderInt("Playback Duration", &data.playback_duration, 1, 180);
+    ImGui::SliderInt("Playback Duration", &playback_duration, 1, 180);
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

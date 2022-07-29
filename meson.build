@@ -5,6 +5,7 @@ add_global_arguments('-DIMGUI_IMPL_OPENGL_ES3', language : 'cpp')
 
 sources = [
   'src/api.cpp',
+  'src/config.cpp',
   'src/fbo.cpp',
   'src/gui.cpp',
   'src/main.cpp',
@@ -33,7 +34,8 @@ thirdparty_sources = [
 thirdparty_includes = [
   'vendor/glad/include',
   'vendor/imgui/include',
-  'vendor/cpp-httplib'
+  'vendor/cpp-httplib',
+  'vendor/json/include',
 ]
 
 dependencies = [ dependency('sdl2'), dependency('mpv'), dependency('glesv2') ]
@@ -45,3 +47,4 @@ executable('player',
   install: true)
 
 install_subdir('shaders', install_dir : '/opt/share/mpv_glsl')
+install_data('src/config.json', install_dir : '/etc/mpv_glsl')

@@ -14,6 +14,7 @@
 #include "SDL_timer.h"
 #include "SDL_touch.h"
 #include "api.h"
+#include "config.h"
 #include "fbo.h"
 #include "gui.h"
 #include "imgui_impl_sdl.h"
@@ -33,6 +34,7 @@ struct options {
     int shader_reload;
     string media_path;
     string website_path;
+    string config_path;
 };
 
 static struct options opts = {.shader_reload = 0};
@@ -55,6 +57,12 @@ void parse_args(int argc, char *argv[]) {
                 die("Missing value for option %s\n", arg_str.c_str());
             }
             opts.website_path = string(argv[opt_idx]);
+        } else if (arg_str == "--config") {
+            opt_idx++;
+            if (opt_idx >= argc) {
+                die("Missing value for option %s\n", arg_str.c_str());
+            }
+            opts.config_path = string(argv[opt_idx]);
         } else if (arg_str == "--shader-reload") {
             opts.shader_reload = 1;
         } else {
@@ -62,8 +70,9 @@ void parse_args(int argc, char *argv[]) {
         }
     }
 
-    if (opts.media_path.empty() && opts.website_path.empty()) {
-        die("Must specify media & website directory");
+    if (opts.media_path.empty() && opts.website_path.empty() &&
+        opts.config_path.empty()) {
+        die("Must specify media, website & config paths");
     }
 
     if (!opts.media_path.ends_with("/")) {
@@ -104,24 +113,9 @@ int main(int argc, char *argv[]) {
     }
 
     // gui values
-    vector<EffectItem> effects = {
-        {.name = "Swirl", .is_selected = true},
-        {.name = "Blur", .is_selected = false},
-        {.name = "Pixel", .is_selected = false},
-        {.name = "Voronoi", .is_selected = false},
-        {.name = "Brushed", .is_selected = false},
-        {.name = "Debug", .is_selected = false},
-    };
-    size_t default_effect = 0;
-    auto gui_data = GuiData{
-        .finger_radius = 0.20,
-        .effect_fade_in = 0.2,
-        .effect_amount = 10.0,
-        .effects = effects,
-        .selected_effect = default_effect,
-        .playback_duration = 20,
-    };
-    size_t loaded_effect = default_effect;
+    auto config = Config(opts.config_path);
+    int playback_duration = 20;
+    auto current_effect = config.get_selected_name();
 
     uint64_t player_target_tick = 1;
     uint64_t last_player_swap = 0;
@@ -147,7 +141,7 @@ int main(int argc, char *argv[]) {
                     break;
                 default:
                     player.run(&window_ctx, event, mpv_fbos.get_back().fbo,
-                               player_target_tick, gui_data.playback_duration,
+                               player_target_tick, playback_duration,
                                reset_effect);
                     if (player_target_tick > last_player_swap) {
                         player_target_tick = last_player_swap;
@@ -201,19 +195,20 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (loaded_effect != gui_data.selected_effect) {
-            auto effect = gui_data.effects[gui_data.selected_effect];
+        if (current_effect != config.get_selected_name()) {
+            current_effect = config.get_selected_name();
             stringstream ss;
-            ss << "#version 300 es\n#define " << effect.name << "\n";
+            ss << "#version 300 es\n#define " << current_effect << "\n";
             effect_shader.set_macros(ss.str());
             input_shader.set_macros(ss.str());
-            loaded_effect = gui_data.selected_effect;
         }
 
         if (opts.shader_reload) {
             effect_shader.reload();
             input_shader.reload();
         }
+
+        auto effect_data = config.get_selected_effect();
 
         uint64_t delta = ticks - last_render_tick;
         last_render_tick = ticks;
@@ -232,9 +227,9 @@ int main(int argc, char *argv[]) {
         glUniform3fv(glGetUniformLocation(input_shader.program, "fingers"),
                      N_FINGERS, &fingers_uniform[0][0]);
         glUniform1f(glGetUniformLocation(input_shader.program, "fingerRadius"),
-                    gui_data.finger_radius);
+                    effect_data.finger_radius);
         glUniform1f(glGetUniformLocation(input_shader.program, "effectFadeIn"),
-                    gui_data.effect_fade_in);
+                    effect_data.effect_fade_in);
         glUniform1i(glGetUniformLocation(input_shader.program, "reset"),
                     (int)reset_effect);
         reset_effect = false;
@@ -263,7 +258,7 @@ int main(int argc, char *argv[]) {
         glUniform2f(glGetUniformLocation(effect_shader.program, "resolution"),
                     width, height);
         glUniform1f(glGetUniformLocation(effect_shader.program, "amount"),
-                    gui_data.effect_amount);
+                    effect_data.effect_amount);
         glUniform1f(glGetUniformLocation(effect_shader.program, "time"),
                     ticks / 1000.0);
 
@@ -272,7 +267,7 @@ int main(int argc, char *argv[]) {
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        gui.render(gui_data);
+        gui.render(config, playback_duration);
         SDL_GL_SwapWindow(window_ctx.window);
     }
 done:

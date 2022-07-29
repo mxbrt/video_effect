@@ -1,0 +1,32 @@
+{
+  "Swirl": {
+    "finger_radius": 0.2,
+    "effect_fade_in": 0.2,
+    "effect_amount": 10.0
+  },
+  "Blur": {
+    "finger_radius": 0.2,
+    "effect_fade_in": 0.2,
+    "effect_amount": 10.0
+  },
+  "Pixel": {
+    "finger_radius": 0.2,
+    "effect_fade_in": 0.2,
+    "effect_amount": 10.0
+  },
+  "Voronoi": {
+    "finger_radius": 0.2,
+    "effect_fade_in": 0.2,
+    "effect_amount": 10.0
+  },
+  "Brushed": {
+    "finger_radius": 0.2,
+    "effect_fade_in": 0.2,
+    "effect_amount": 10.0
+  },
+  "Debug": {
+    "finger_radius": 0.2,
+    "effect_fade_in": 0.2,
+    "effect_amount": 10.0
+  }
+}
