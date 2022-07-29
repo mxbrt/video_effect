@@ -271,5 +271,6 @@ int main(int argc, char *argv[]) {
         SDL_GL_SwapWindow(window_ctx.window);
     }
 done:
+    config.save();
     return 0;
 }

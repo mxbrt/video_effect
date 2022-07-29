@@ -25,5 +25,6 @@ class Config {
  private:
   map<string, EffectConfig> data;
   string selected_effect;
+  const string json_path;
 };
 }  // namespace mpv_glsl

@@ -19,7 +19,7 @@ void from_json(const json& j, EffectConfig& cfg) {
   j.at("effect_amount").get_to(cfg.effect_amount);
 }
 
-Config::Config(const string& json_path) {
+Config::Config(const string& json_path) : json_path(json_path) {
   std::ifstream f(json_path);
   json j = json::parse(f);
   data = j.get<map<string, EffectConfig>>();
@@ -30,6 +30,9 @@ map<string, EffectConfig>& Config::get() { return data; }
 
 void Config::save() {
   // TODO
+  std::ofstream f(json_path);
+  json j = data;
+  f << std::setw(4) << j << std::endl;
 }
 
 EffectConfig& Config::get_selected_effect() { return data[selected_effect]; }
