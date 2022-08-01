@@ -20,12 +20,12 @@ bool Gui::process_event(SDL_Event& event) {
   return io.WantCaptureMouse;
 }
 
-void Gui::render(Config& config, int& playback_duration) {
+void Gui::render(Config& config) {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplSDL2_NewFrame();
   ImGui::NewFrame();
 
-  auto& config_map = config.get();
+  auto& config_map = config.get_effects();
 
   if (ImGui::Begin("config")) {
     ImGui::ListBoxHeader("Effect", config_map.size());
@@ -40,12 +40,18 @@ void Gui::render(Config& config, int& playback_duration) {
     }
     ImGui::ListBoxFooter();
 
-    auto& data = config.get_selected_effect();
+    auto& effect_config = config.get_selected_effect();
+    auto& player_config = config.get_player_config();
 
-    ImGui::SliderFloat("Effect strength", &data.effect_amount, 0.0f, 100.0f);
-    ImGui::SliderFloat("Touch Radius", &data.finger_radius, 0.0f, 1.0f);
-    ImGui::SliderFloat("Touch Fade In", &data.effect_fade_in, 0.0f, 1.0f);
-    ImGui::SliderInt("Playback Duration", &playback_duration, 1, 180);
+    ImGui::SliderFloat("Effect strength", &effect_config.effect_amount, 0.0f,
+                       100.0f);
+    ImGui::SliderFloat("Touch Radius", &effect_config.finger_radius, 0.0f,
+                       1.0f);
+    ImGui::SliderFloat("Touch Fade In", &effect_config.effect_fade_in, 0.0f,
+                       1.0f);
+    ImGui::SliderInt("Playback Duration", &player_config.playback_duration, 1,
+                     180);
+    ImGui::SliderInt("Category", &player_config.category, 0, 8);
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

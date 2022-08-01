@@ -1,32 +1,38 @@
 {
-    "Blur": {
-        "effect_amount": 34.465999603271484,
-        "effect_fade_in": 0.20000000298023224,
-        "finger_radius": 0.20000000298023224
+    "EffectConfig": {
+        "Blur": {
+            "effect_amount": 12.621000289916992,
+            "effect_fade_in": 0.20000000298023224,
+            "finger_radius": 0.578000009059906
+        },
+        "Brushed": {
+            "effect_amount": 10.0,
+            "effect_fade_in": 0.20000000298023224,
+            "finger_radius": 0.20000000298023224
+        },
+        "Debug": {
+            "effect_amount": 10.0,
+            "effect_fade_in": 0.20000000298023224,
+            "finger_radius": 0.20000000298023224
+        },
+        "Pixel": {
+            "effect_amount": 10.0,
+            "effect_fade_in": 0.20000000298023224,
+            "finger_radius": 0.20000000298023224
+        },
+        "Swirl": {
+            "effect_amount": 10.0,
+            "effect_fade_in": 0.20000000298023224,
+            "finger_radius": 0.20000000298023224
+        },
+        "Voronoi": {
+            "effect_amount": 72.33000183105469,
+            "effect_fade_in": 0.04399999976158142,
+            "finger_radius": 0.21400000154972076
+        }
     },
-    "Brushed": {
-        "effect_amount": 10.0,
-        "effect_fade_in": 0.20000000298023224,
-        "finger_radius": 0.20000000298023224
-    },
-    "Debug": {
-        "effect_amount": 10.0,
-        "effect_fade_in": 0.20000000298023224,
-        "finger_radius": 0.20000000298023224
-    },
-    "Pixel": {
-        "effect_amount": 10.0,
-        "effect_fade_in": 0.20000000298023224,
-        "finger_radius": 0.20000000298023224
-    },
-    "Swirl": {
-        "effect_amount": 10.0,
-        "effect_fade_in": 0.20000000298023224,
-        "finger_radius": 0.20000000298023224
-    },
-    "Voronoi": {
-        "effect_amount": 10.0,
-        "effect_fade_in": 0.20000000298023224,
-        "finger_radius": 0.20000000298023224
+    "PlayerConfig": {
+        "category": 8,
+        "playback_duration": 20
     }
 }

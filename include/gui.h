@@ -14,6 +14,6 @@ class Gui {
  public:
   Gui(window_ctx& window_ctx);
   bool process_event(SDL_Event& event);
-  void render(Config& config, int& playback_duration);
+  void render(Config& config);
 };
 }  // namespace mpv_glsl

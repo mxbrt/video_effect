@@ -5,6 +5,11 @@
 namespace mpv_glsl {
 using namespace std;
 
+struct PlayerConfig {
+  int playback_duration;
+  int category;
+};
+
 struct EffectConfig {
   float finger_radius;
   float effect_fade_in;
@@ -15,7 +20,8 @@ class Config {
  public:
   Config(const string& json_path);
 
-  map<string, EffectConfig>& get();
+  map<string, EffectConfig>& get_effects();
+  PlayerConfig& get_player_config();
   void save();
 
   EffectConfig& get_selected_effect();
@@ -23,7 +29,8 @@ class Config {
   void set_selected_name(const string& name);
 
  private:
-  map<string, EffectConfig> data;
+  map<string, EffectConfig> effect_data;
+  PlayerConfig player_config;
   string selected_effect;
   const string json_path;
 };

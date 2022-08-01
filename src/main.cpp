@@ -267,7 +267,8 @@ int main(int argc, char *argv[]) {
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        gui.render(config, playback_duration);
+        gui.render(config);
+        api.set_category(config.get_player_config().category);
         SDL_GL_SwapWindow(window_ctx.window);
     }
 done:

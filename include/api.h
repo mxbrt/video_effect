@@ -20,6 +20,7 @@ class Api {
 
   optional<string> get_play_cmd();
   void set_play_cmd(const string& cmd);
+  void set_category(int id);
 
  private:
   void server_run();
@@ -32,6 +33,7 @@ class Api {
   mutex command_mutex;
   string command;
   bool command_pending;
+  int category;
 };
 
 }  // namespace mpv_glsl

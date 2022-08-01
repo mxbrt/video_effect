@@ -14,6 +14,7 @@ Api::Api(const string& media_path, const string& website_path)
       command_pending(false) {
   server_thread = thread(&Api::server_run, this);
 }
+
 Api::~Api() {
   server.stop();
   server_thread.join();
@@ -40,7 +41,15 @@ void Api::server_run() {
     res.body = command;
   });
 
+  server.Get("/category", [this](const Request& req, Response& res) {
+    res.body = to_string(category);
+  });
+
   server.listen("localhost", 8000);
+}
+
+void Api::set_category(int id) {
+  category = id;
 }
 
 void Api::set_play_cmd(const string& cmd) {
