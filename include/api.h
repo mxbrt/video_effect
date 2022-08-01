@@ -13,7 +13,7 @@ using namespace std;
 
 class Api {
  public:
-  Api(const string& media_path, const string& website_path);
+  Api(const string& media_path, const string& website_path, int category);
   ~Api();
   Api(const Api&) = delete;
   Api& operator=(const Api&) = delete;

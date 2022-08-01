@@ -8,10 +8,11 @@
 namespace mpv_glsl {
 using namespace std;
 using namespace httplib;
-Api::Api(const string& media_path, const string& website_path)
+Api::Api(const string& media_path, const string& website_path, int category)
     : media_path(media_path),
       website_path(website_path),
-      command_pending(false) {
+      command_pending(false),
+      category(category) {
   server_thread = thread(&Api::server_run, this);
 }
 

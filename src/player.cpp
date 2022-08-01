@@ -39,8 +39,9 @@ static void on_mpv_render_update(void *) {
     SDL_PushEvent(&event);
 }
 
-Player::Player(struct window_ctx *ctx, const std::string &video_path, Api &api)
-    : api(api), file_loaded(false), video_path(video_path) {
+Player::Player(struct window_ctx *ctx, const std::string &video_path, Api &api,
+               int category)
+    : api(api), category(category), file_loaded(false), video_path(video_path) {
     mpv = mpv_create();
     // mpv_request_log_messages(mpv, "debug");
     if (!mpv) die("context init failed");
@@ -143,7 +144,8 @@ Player::~Player() {
 }
 
 void Player::load_playlist() {
-    const char *load_cmd[] = {"loadfile", video_path.c_str(), "append", NULL};
+    auto play_path = video_path + '/' + to_string(category);
+    const char *load_cmd[] = {"loadfile", play_path.c_str(), "append", NULL};
     mpv_command_async(mpv, 0, load_cmd);
     const char *play_cmd[] = {"playlist-play-index", "0", NULL};
     mpv_command_async(mpv, 0, play_cmd);
@@ -154,6 +156,15 @@ void Player::play_file(const std::string &file_name) {
     const char *loadfile_cmd[] = {"loadfile", absolute_path.c_str(), "replace",
                                   NULL};
     mpv_command_async(mpv, 0, loadfile_cmd);
+}
+
+void Player::set_category(int new_category) {
+    category = new_category;
+    // The stop command will empty the playlist. Once this is done, mpv will
+    // enter the idle state, which will cause run() to load a playlist with the
+    // new category
+    const char *stop_cmd[] = {"stop", NULL};
+    mpv_command_async(mpv, 0, stop_cmd);
 }
 
 void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
@@ -199,6 +210,7 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
                     }
                     auto video_duration =
                         *static_cast<int64_t *>(event_property->data);
+                    video_duration = video_duration < 1 ? 1 : video_duration;
                     int64_t loops = (playback_duration / video_duration) - 1;
                     loops = loops < 0 ? 0 : loops;
                     mpv_set_property_async(mpv, 0, "loop", MPV_FORMAT_INT64,
@@ -219,7 +231,6 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
             }
             printf("[mpv] event: %s\n", mpv_event_name(mp_event->event_id));
         }
-
         return;
     }
     if (event.type == wakeup_on_mpv_render_update) {

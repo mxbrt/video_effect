@@ -1,7 +1,7 @@
 {
     "EffectConfig": {
         "Blur": {
-            "effect_amount": 12.621000289916992,
+            "effect_amount": 0.0,
             "effect_fade_in": 0.20000000298023224,
             "finger_radius": 0.578000009059906
         },
@@ -32,7 +32,7 @@
         }
     },
     "PlayerConfig": {
-        "category": 8,
+        "category": 7,
         "playback_duration": 20
     }
 }

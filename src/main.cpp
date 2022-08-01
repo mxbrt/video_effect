@@ -86,9 +86,16 @@ int main(int argc, char *argv[]) {
     auto shuffler =
         Shuffler({opts.media_path + "video", opts.media_path + "image"});
 
+    // gui values
+    auto config = Config(opts.config_path);
+    auto current_effect = config.get_selected_name();
+    auto current_category = config.get_player_config().category;
+
     // Start API server
-    auto api = Api(opts.media_path, opts.website_path);
-    auto player = Player(&window_ctx, opts.media_path + "video", api);
+    auto api = Api(opts.media_path, opts.website_path, current_category);
+    auto player =
+        Player(&window_ctx, opts.media_path + "video", api, current_category);
+
     auto gui = Gui(window_ctx);
 
     auto shader_macro = "#version 300 es\n#define Swirl\n";
@@ -111,11 +118,6 @@ int main(int argc, char *argv[]) {
             Shader("shaders/vert.glsl", "shaders/noise.glsl", shader_macro);
         simplex_noise_texture.render(noise_shader);
     }
-
-    // gui values
-    auto config = Config(opts.config_path);
-    int playback_duration = 20;
-    auto current_effect = config.get_selected_name();
 
     uint64_t player_target_tick = 1;
     uint64_t last_player_swap = 0;
@@ -141,7 +143,8 @@ int main(int argc, char *argv[]) {
                     break;
                 default:
                     player.run(&window_ctx, event, mpv_fbos.get_back().fbo,
-                               player_target_tick, playback_duration,
+                               player_target_tick,
+                               config.get_player_config().playback_duration,
                                reset_effect);
                     if (player_target_tick > last_player_swap) {
                         player_target_tick = last_player_swap;
@@ -154,6 +157,12 @@ int main(int argc, char *argv[]) {
         auto api_play_file = api.get_play_cmd();
         if (api_play_file) {
             player.play_file(*api_play_file);
+        }
+
+        if (current_category != config.get_player_config().category) {
+            current_category = config.get_player_config().category;
+            api.set_category(current_category);
+            player.set_category(current_category);
         }
 
         uint64_t ticks = SDL_GetTicks64();
@@ -268,7 +277,6 @@ int main(int argc, char *argv[]) {
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         gui.render(config);
-        api.set_category(config.get_player_config().category);
         SDL_GL_SwapWindow(window_ctx.window);
     }
 done:
