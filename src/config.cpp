@@ -4,7 +4,7 @@
 
 #include "json.hpp"
 
-namespace mpv_glsl {
+namespace sendprotest {
 using json = nlohmann::json;
 
 void to_json(json& j, const EffectConfig& cfg) {
@@ -52,4 +52,4 @@ EffectConfig& Config::get_selected_effect() { return effect_data[selected_effect
 const string& Config::get_selected_name() { return selected_effect; }
 void Config::set_selected_name(const string& name) { selected_effect = name; }
 
-}  // namespace mpv_glsl
+}  // namespace sendprotest

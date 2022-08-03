@@ -6,7 +6,7 @@
 
 #include "util.h"
 
-namespace mpv_glsl {
+namespace sendprotest {
 using namespace std;
 
 Shader::Shader(const string &vert_shader_path, const string &frag_shader_path,
@@ -82,4 +82,4 @@ void Shader::set_macros(const string &new_macros) {
     macros = new_macros;
     init();
 }
-}  // namespace mpv_glsl
+}  // namespace sendprotest

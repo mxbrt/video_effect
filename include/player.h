@@ -8,7 +8,7 @@
 #include "api.h"
 #include "sdl_gl.h"
 
-namespace mpv_glsl {
+namespace sendprotest {
 
 struct window_ctx {
     SDL_Window *window;
@@ -36,4 +36,4 @@ class Player {
     mpv_handle *mpv;
     mpv_render_context *mpv_gl;
     };
-}  // namespace mpv_glsl
+}  // namespace sendprotest

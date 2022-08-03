@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 
-namespace mpv_glsl {
+namespace sendprotest {
 using namespace std;
 
 struct PlayerConfig {
@@ -34,4 +34,4 @@ class Config {
   string selected_effect;
   const string json_path;
 };
-}  // namespace mpv_glsl
+}  // namespace sendprotest

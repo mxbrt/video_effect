@@ -27,7 +27,7 @@
 
 const int N_FINGERS = 10;
 
-using namespace mpv_glsl;
+using namespace sendprotest;
 using namespace std;
 
 struct options {

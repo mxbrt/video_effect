@@ -7,7 +7,7 @@
 #include "imgui_impl_sdl.h"
 #include "player.h"
 
-namespace mpv_glsl {
+namespace sendprotest {
 using namespace std;
 
 class Gui {
@@ -16,4 +16,4 @@ class Gui {
   bool process_event(SDL_Event& event);
   void render(Config& config);
 };
-}  // namespace mpv_glsl
+}  // namespace sendprotest

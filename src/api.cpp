@@ -5,7 +5,7 @@
 
 #include "util.h"
 
-namespace mpv_glsl {
+namespace sendprotest {
 using namespace std;
 using namespace httplib;
 Api::Api(const string& media_path, const string& website_path, int category)
@@ -69,4 +69,4 @@ optional<string> Api::get_play_cmd() {
     return std::nullopt;
   }
 }
-}  // namespace mpv_glsl
+}  // namespace sendprotest

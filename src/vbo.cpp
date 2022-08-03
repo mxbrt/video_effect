@@ -3,7 +3,7 @@
 #include "sdl_gl.h"
 #include "util.h"
 
-namespace mpv_glsl {
+namespace sendprotest {
 using namespace std;
 Vbo::Vbo(vector<float>& vertices) {
   glGenVertexArrays(1, &vao);
@@ -23,4 +23,4 @@ Vbo::~Vbo() {
   glDeleteVertexArrays(1, &vao);
   glDeleteBuffers(1, &vbo);
 }
-}  // namespace mpv_glsl
+}  // namespace sendprotest

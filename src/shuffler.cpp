@@ -6,7 +6,7 @@
 
 #include "util.h"
 
-namespace mpv_glsl {
+namespace sendprotest {
 using namespace std;
 
 Shuffler::Shuffler(const vector<string>& directories)
@@ -34,4 +34,4 @@ vector<string> Shuffler::get() {
     shuffle();
     return files;
 }
-}  // namespace mpv_glsl
+}  // namespace sendprotest

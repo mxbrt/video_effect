@@ -3,7 +3,7 @@
 
 #include <vector>
 
-namespace mpv_glsl {
+namespace sendprotest {
 using namespace std;
 class Vbo {
  public:
@@ -13,4 +13,4 @@ class Vbo {
   unsigned int vao;
   unsigned int vbo;
 };
-}  // namespace mpv_glsl
+}  // namespace sendprotest

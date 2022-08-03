@@ -1,4 +1,4 @@
-project('mpv_glsl', 'c', 'cpp',
+project('sendprotest', 'c', 'cpp',
         default_options : ['c_std=c11', 'cpp_std=c++20'])
 
 add_global_arguments('-DIMGUI_IMPL_OPENGL_ES3', language : 'cpp')
@@ -40,11 +40,14 @@ thirdparty_includes = [
 
 dependencies = [ dependency('sdl2'), dependency('mpv'), dependency('glesv2') ]
 
-executable('player',
+
+
+executable('sendprotest_player',
   sources + thirdparty_sources,
   include_directories: include_directories(includes + thirdparty_includes),
   dependencies : dependencies,
   install: true)
 
-install_subdir('shaders', install_dir : '/opt/share/mpv_glsl')
-install_data('src/config.json', install_dir : '/etc/mpv_glsl')
+sendprotest_dir = '/opt/share/sendprotest'
+install_subdir('shaders', install_dir : sendprotest_dir)
+install_data('src/config.json', install_dir : '/etc/sendprotest')

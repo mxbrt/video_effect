@@ -3,7 +3,7 @@
 
 #include "texture.h"
 
-namespace mpv_glsl {
+namespace sendprotest {
 using namespace std;
 class Fbo {
  public:
@@ -32,4 +32,4 @@ class DoubleFbo {
   size_t fbo_idx;
 };
 
-}  // namespace mpv_glsl
+}  // namespace sendprotest

@@ -4,7 +4,7 @@
 #include "util.h"
 #include "vbo.h"
 
-namespace mpv_glsl {
+namespace sendprotest {
 Texture::Texture(int width, int height, int internalformat)
     : width(width), height(height) {
   glGenTextures(1, &id);
@@ -40,4 +40,4 @@ void Texture::render(Shader& shader) {
   glClear(GL_COLOR_BUFFER_BIT);
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
-}  // namespace mpv_glsl
+}  // namespace sendprotest

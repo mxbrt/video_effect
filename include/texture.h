@@ -1,7 +1,7 @@
 #pragma once
 #include "sdl_gl.h"
 #include "shader.h"
-namespace mpv_glsl {
+namespace sendprotest {
 class Texture {
  public:
   Texture(int width, int height, int internalformat = GL_RGB);
@@ -13,4 +13,4 @@ class Texture {
 
   unsigned int id, width, height;
 };
-}  // namespace mpv_glsl
+}  // namespace sendprotest

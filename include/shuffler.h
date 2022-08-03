@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace mpv_glsl {
+namespace sendprotest {
 using namespace std;
 class Shuffler {
  public:
@@ -20,4 +20,4 @@ class Shuffler {
   vector<string> files;
   default_random_engine rng;
 };
-}  // namespace mpv_glsl
+}  // namespace sendprotest

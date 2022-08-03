@@ -4,7 +4,7 @@
 #include "texture.h"
 #include "util.h"
 
-namespace mpv_glsl {
+namespace sendprotest {
 Fbo::Fbo(int width, int height, int internalformat)
     : texture(Texture(width, height, internalformat)) {
   glGenFramebuffers(1, &fbo);
@@ -41,4 +41,4 @@ Fbo& DoubleFbo::get_front() { return fbos[fbo_idx]; }
 Fbo& DoubleFbo::get_back() { return fbos[(fbo_idx + 1) % 2]; }
 void DoubleFbo::swap() { fbo_idx = (fbo_idx + 1) % 2; }
 
-}  // namespace mpv_glsl
+}  // namespace sendprotest

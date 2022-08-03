@@ -4,7 +4,7 @@
 
 #include "sdl_gl.h"
 
-namespace mpv_glsl {
+namespace sendprotest {
 using namespace std;
 class Shader {
  public:
@@ -31,4 +31,4 @@ class Shader {
   int src_mtime;
   string macros;
   };
-}  // namespace mpv_glsl
+}  // namespace sendprotest

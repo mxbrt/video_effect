@@ -17,7 +17,7 @@
 #include "SDL_version.h"
 #include "shuffler.h"
 #include "util.h"
-namespace mpv_glsl {
+namespace sendprotest {
 
 static uint32_t wakeup_on_mpv_render_update;
 static uint32_t wakeup_on_mpv_events;
@@ -271,4 +271,4 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
     }
     return;
 }
-}  // namespace mpv_glsl
+}  // namespace sendprotest

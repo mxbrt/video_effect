@@ -8,7 +8,7 @@
 #include <string>
 #include <thread>
 
-namespace mpv_glsl {
+namespace sendprotest {
 using namespace std;
 
 class Api {
@@ -36,4 +36,4 @@ class Api {
   int category;
 };
 
-}  // namespace mpv_glsl
+}  // namespace sendprotest

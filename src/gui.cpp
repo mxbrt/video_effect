@@ -4,7 +4,7 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl.h>
 
-namespace mpv_glsl {
+namespace sendprotest {
 Gui::Gui(window_ctx& window_ctx) {
   const char* glsl_version = "#version 300 es";
   IMGUI_CHECKVERSION();
@@ -64,4 +64,4 @@ void Gui::render(Config& config) {
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
-}  // namespace mpv_glsl
+}  // namespace sendprotest
