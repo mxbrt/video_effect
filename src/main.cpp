@@ -20,7 +20,6 @@
 #include "imgui_impl_sdl.h"
 #include "player.h"
 #include "shader.h"
-#include "shuffler.h"
 #include "texture.h"
 #include "util.h"
 #include "vbo.h"
@@ -83,8 +82,8 @@ void parse_args(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
     parse_args(argc, argv);
     struct window_ctx window_ctx;
-    auto shuffler =
-        Shuffler({opts.media_path + "video", opts.media_path + "image"});
+    //auto shuffler =
+        //Shuffler({opts.media_path + "video", opts.media_path + "image"});
 
     // gui values
     auto config = Config(opts.config_path);
@@ -93,8 +92,8 @@ int main(int argc, char *argv[]) {
 
     // Start API server
     auto api = Api(opts.media_path, opts.website_path, current_category);
-    auto player =
-        Player(&window_ctx, opts.media_path + "video", api, current_category);
+    auto player = Player(&window_ctx, opts.media_path, api, current_category,
+                         config.get_player_config().playback_duration);
 
     auto gui = Gui(window_ctx);
 

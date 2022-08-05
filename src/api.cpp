@@ -46,7 +46,7 @@ void Api::server_run() {
     res.body = to_string(category);
   });
 
-  server.listen("localhost", 8000);
+  server.listen("192.168.0.34", 8000);
 }
 
 void Api::set_category(int id) {

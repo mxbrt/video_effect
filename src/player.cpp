@@ -4,6 +4,7 @@
 #include <mpv/client.h>
 #include <mpv/render.h>
 #include <mpv/render_gl.h>
+#include <string>
 #include <sys/types.h>
 #include <wayland-client.h>
 
@@ -15,7 +16,6 @@
 #include "SDL_syswm.h"
 #include "SDL_timer.h"
 #include "SDL_version.h"
-#include "shuffler.h"
 #include "util.h"
 namespace sendprotest {
 
@@ -39,9 +39,9 @@ static void on_mpv_render_update(void *) {
     SDL_PushEvent(&event);
 }
 
-Player::Player(struct window_ctx *ctx, const std::string &video_path, Api &api,
-               int category)
-    : api(api), category(category), file_loaded(false), video_path(video_path) {
+Player::Player(struct window_ctx *ctx, const std::string &media_path, Api &api,
+               int category, int playback_duration)
+    : api(api), category(category), file_loaded(false), media_path(media_path) {
     mpv = mpv_create();
     // mpv_request_log_messages(mpv, "debug");
     if (!mpv) die("context init failed");
@@ -135,7 +135,9 @@ Player::Player(struct window_ctx *ctx, const std::string &video_path, Api &api,
     //  users which run OpenGL on a different thread.)
     mpv_render_context_set_update_callback(mpv_gl, on_mpv_render_update, NULL);
 
-    mpv_set_property_string(mpv, "image-display-duration", "10");
+    const auto duration_str = to_string(playback_duration);
+    mpv_set_property_string(mpv, "image-display-duration",
+                            duration_str.c_str());
 }
 
 Player::~Player() {
@@ -144,15 +146,20 @@ Player::~Player() {
 }
 
 void Player::load_playlist() {
-    auto play_path = video_path + '/' + to_string(category);
-    const char *load_cmd[] = {"loadfile", play_path.c_str(), "append", NULL};
+    const char *stop_cmd[] = {"stop", NULL};
+    mpv_command_async(mpv, 0, stop_cmd);
+    mpv_wait_async_requests(mpv);
+    auto playback_path = media_path + "/" + to_string(category);
+    const char *load_cmd[] = {"loadfile", playback_path.c_str(), "append",
+                              NULL};
     mpv_command_async(mpv, 0, load_cmd);
+    mpv_wait_async_requests(mpv);
     const char *play_cmd[] = {"playlist-play-index", "0", NULL};
     mpv_command_async(mpv, 0, play_cmd);
 }
 
 void Player::play_file(const std::string &file_name) {
-    auto absolute_path = video_path + "/" + file_name;
+    auto absolute_path = media_path + "/" + file_name;
     const char *loadfile_cmd[] = {"loadfile", absolute_path.c_str(), "replace",
                                   NULL};
     mpv_command_async(mpv, 0, loadfile_cmd);
@@ -210,11 +217,13 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
                     }
                     auto video_duration =
                         *static_cast<int64_t *>(event_property->data);
-                    video_duration = video_duration < 1 ? 1 : video_duration;
-                    int64_t loops = (playback_duration / video_duration) - 1;
-                    loops = loops < 0 ? 0 : loops;
-                    mpv_set_property_async(mpv, 0, "loop", MPV_FORMAT_INT64,
-                                           &loops);
+                    if (video_duration > 0) {
+                        int64_t loops =
+                            (playback_duration / video_duration) - 1;
+                        loops = loops < 0 ? 0 : loops;
+                        mpv_set_property_async(mpv, 0, "loop", MPV_FORMAT_INT64,
+                                               &loops);
+                    }
                 } else if (mp_event->reply_userdata == mpv_userdata_filename) {
                     if (event_property->format != MPV_FORMAT_STRING ||
                         strcmp(event_property->name, "filename")) {

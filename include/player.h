@@ -18,7 +18,7 @@ struct window_ctx {
 class Player {
    public:
     Player(struct window_ctx *ctx, const std::string &video_path, Api &api,
-           int category);
+           int category, int playback_duration);
     ~Player();
 
     void play_file(const std::string &file_name);
@@ -32,7 +32,7 @@ class Player {
     Api &api;
     int category;
     bool file_loaded;
-    const std::string video_path;
+    const std::string media_path;
     mpv_handle *mpv;
     mpv_render_context *mpv_gl;
     };
