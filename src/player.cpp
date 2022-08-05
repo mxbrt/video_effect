@@ -159,7 +159,8 @@ void Player::load_playlist() {
 }
 
 void Player::play_file(const std::string &file_name) {
-    auto absolute_path = media_path + "/" + file_name;
+    auto absolute_path =
+        media_path + "/" + to_string(category) + "/" + file_name;
     const char *loadfile_cmd[] = {"loadfile", absolute_path.c_str(), "replace",
                                   NULL};
     mpv_command_async(mpv, 0, loadfile_cmd);
