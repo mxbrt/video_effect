@@ -82,9 +82,6 @@ void parse_args(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
     parse_args(argc, argv);
     struct window_ctx window_ctx;
-    //auto shuffler =
-        //Shuffler({opts.media_path + "video", opts.media_path + "image"});
-
     // gui values
     auto config = Config(opts.config_path);
     auto current_effect = config.get_selected_name();

@@ -11,7 +11,6 @@ sources = [
   'src/main.cpp',
   'src/player.cpp',
   'src/shader.cpp',
-  'src/shuffler.cpp',
   'src/texture.cpp',
   'src/util.cpp',
   'src/vbo.cpp',

@@ -49,7 +49,6 @@ Player::Player(struct window_ctx *ctx, const std::string &media_path, Api &api,
     if (mpv_initialize(mpv) < 0) die("mpv init failed");
 
     mpv_set_option_string(mpv, "hwdec", "h264-drm-copy");
-    mpv_set_option_string(mpv, "video-sync", "audio");
     mpv_set_option_string(mpv, "shuffle", "");
 
     // Jesus Christ SDL, you suck!
