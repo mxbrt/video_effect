@@ -34,7 +34,7 @@ void main()
         float lastIntensity = texture(effectTexture, TexCoords).r;
         float dist = sqrt(fingerDist);
         if (dist < fingerRadius) {
-#ifdef Voronoi
+#if defined(Voronoi) || defined(Pixel)
             highp float effectFade = effectFadeIn;
 #else
             highp float effectFade = effectFadeIn * (fingerRadius - dist);
