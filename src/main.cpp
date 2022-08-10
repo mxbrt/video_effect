@@ -31,12 +31,13 @@ using namespace std;
 
 struct options {
     int shader_reload;
+    int enable_gui;
     string media_path;
     string website_path;
     string config_path;
 };
 
-static struct options opts = {.shader_reload = 0};
+static struct options opts = {.shader_reload = 0, .enable_gui = 0};
 
 static const int width = 1920;
 static const int height = 1080;
@@ -64,6 +65,8 @@ void parse_args(int argc, char *argv[]) {
             opts.config_path = string(argv[opt_idx]);
         } else if (arg_str == "--shader-reload") {
             opts.shader_reload = 1;
+        } else if (arg_str == "--enable-gui") {
+            opts.enable_gui = 1;
         } else {
             die("Unknown argument: %s\n", argv[opt_idx]);
         }
@@ -125,7 +128,7 @@ int main(int argc, char *argv[]) {
         SDL_Event event;
         bool imgui_event = false;
         while (SDL_PollEvent(&event)) {
-            if (gui.process_event(event)) {
+            if (opts.enable_gui && gui.process_event(event)) {
                 imgui_event = true;
             }
             switch (event.type) {
@@ -272,7 +275,9 @@ int main(int argc, char *argv[]) {
         glClear(GL_COLOR_BUFFER_BIT);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        gui.render(config);
+        if (opts.enable_gui) {
+            gui.render(config);
+        }
         SDL_GL_SwapWindow(window_ctx.window);
     }
 done:
