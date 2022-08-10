@@ -9,6 +9,7 @@
 #include <cstring>
 #include <sstream>
 #include <string>
+#include <sys/types.h>
 
 #include "SDL_events.h"
 #include "SDL_timer.h"
@@ -119,6 +120,7 @@ int main(int argc, char *argv[]) {
     }
 
     uint64_t player_target_tick = 1;
+    u_int64_t playback_start_tick = 0;
     uint64_t last_player_swap = 0;
     uint64_t last_render_tick = SDL_GetTicks64();
 
@@ -165,6 +167,11 @@ int main(int argc, char *argv[]) {
         }
 
         uint64_t ticks = SDL_GetTicks64();
+
+        if (reset_effect) {
+            playback_start_tick = ticks;
+        }
+
         uint32_t buttons;
         SDL_PumpEvents();  // make sure we have the latest input state.
         float fingers_uniform[N_FINGERS][3] = {};
@@ -268,7 +275,7 @@ int main(int argc, char *argv[]) {
         glUniform1f(glGetUniformLocation(effect_shader.program, "amount"),
                     effect_data.effect_amount);
         glUniform1f(glGetUniformLocation(effect_shader.program, "time"),
-                    ticks / 1000.0);
+                    ticks - playback_start_tick);
 
         glBindVertexArray(vbo.vao);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
