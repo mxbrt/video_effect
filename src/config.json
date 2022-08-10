@@ -32,7 +32,7 @@
         }
     },
     "PlayerConfig": {
-        "category": 6,
+        "category": 0,
         "playback_duration": 20
     }
 }

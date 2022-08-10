@@ -46,9 +46,7 @@ void Api::server_run() {
     res.body = to_string(category);
   });
 
-  int port = 8000 + category;
-  printf("Starting server on 0.0.0.0:%d\n", port);
-  server.listen("0.0.0.0", port);
+  server.listen("0.0.0.0", 8000);
 }
 
 void Api::set_category(int id) {
