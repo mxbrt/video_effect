@@ -17,7 +17,7 @@ uniform float time;
 void effect(float intensity)
 {
     float x = log((1.0 - amount / 100.0));
-    float t = time * 0.0000005;
+    float t = time * 0.000001;
     float offset2 = texture(simplexNoiseTexture, TexCoords * t).r * 0.25;
     float offset = texture(simplexNoiseTexture, TexCoords * x).r * 0.5;
     offset = mix(offset * offset2, 0.0, intensity);
