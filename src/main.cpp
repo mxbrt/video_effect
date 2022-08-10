@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
         glUniform1f(glGetUniformLocation(effect_shader.program, "amount"),
                     effect_data.effect_amount);
         glUniform1f(glGetUniformLocation(effect_shader.program, "time"),
-                    ticks % 500000);
+                    ticks / 1000.0);
 
         glBindVertexArray(vbo.vao);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
