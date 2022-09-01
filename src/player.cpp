@@ -219,13 +219,15 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
                     }
                     auto video_duration =
                         *static_cast<int64_t *>(event_property->data);
+                    printf("video_duration: %ld\n", video_duration);
+                    int64_t loops = 0;
                     if (video_duration > 0) {
-                        int64_t loops =
+                        loops =
                             (playback_duration / video_duration) - 1;
                         loops = loops < 0 ? 0 : loops;
-                        mpv_set_property_async(mpv, 0, "loop", MPV_FORMAT_INT64,
-                                               &loops);
                     }
+                    mpv_set_property_async(mpv, 0, "loop", MPV_FORMAT_INT64,
+                                           &loops);
                 } else if (mp_event->reply_userdata == mpv_userdata_filename) {
                     if (event_property->format != MPV_FORMAT_STRING ||
                         strcmp(event_property->name, "filename")) {
