@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     uint64_t last_player_swap = 0;
     uint64_t last_render_tick = SDL_GetTicks64();
 
-    bool reset_effect = false;
+    bool next_file = false;
     // Touch event state
     while (1) {
         SDL_Event event;
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
                     player.run(&window_ctx, event, mpv_fbos.get_back().fbo,
                                player_target_tick,
                                config.get_player_config().playback_duration,
-                               reset_effect);
+                               next_file);
                     if (player_target_tick > last_player_swap) {
                         player_target_tick = last_player_swap;
                         mpv_fbos.swap();
@@ -239,8 +239,8 @@ int main(int argc, char *argv[]) {
         glUniform1f(glGetUniformLocation(input_shader.program, "effectFadeIn"),
                     effect_data.effect_fade_in);
         glUniform1i(glGetUniformLocation(input_shader.program, "reset"),
-                    (int)reset_effect);
-        reset_effect = false;
+                    (int)next_file);
+
         glUniform1f(glGetUniformLocation(input_shader.program, "delta"), delta);
         glBindVertexArray(vbo.vao);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -256,8 +256,8 @@ int main(int argc, char *argv[]) {
         glBindTexture(GL_TEXTURE_2D, simplex_noise_texture.id);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
-        glUniform1i(glGetUniformLocation(effect_shader.program, "movieTexture"),
-                    0);
+        glUniform1i(
+                glGetUniformLocation(effect_shader.program, "mpvTexture"), 0);
         glUniform1i(
             glGetUniformLocation(effect_shader.program, "effectTexture"), 1);
         glUniform1i(
@@ -279,6 +279,7 @@ int main(int argc, char *argv[]) {
             gui.render(config);
         }
         SDL_GL_SwapWindow(window_ctx.window);
+        next_file = false;
     }
 done:
     return 0;

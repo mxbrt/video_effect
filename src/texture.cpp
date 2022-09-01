@@ -39,5 +39,7 @@ void Texture::render(Shader& shader) {
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
   glDrawArrays(GL_TRIANGLES, 0, 6);
+  glDeleteFramebuffers(1, &fbo);
+  glDeleteRenderbuffers(1, &rbo);
 }
 }  // namespace sendprotest

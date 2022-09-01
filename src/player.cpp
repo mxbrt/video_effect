@@ -48,8 +48,8 @@ Player::Player(struct window_ctx *ctx, const std::string &media_path, Api &api,
     // Some minor options can only be set before mpv_initialize().
     if (mpv_initialize(mpv) < 0) die("mpv init failed");
 
-    mpv_set_option_string(mpv, "hwdec", "h264-drm-copy");
-    mpv_set_option_string(mpv, "shuffle", "");
+    mpv_set_property_string(mpv, "hwdec", "h264-drm-copy");
+    mpv_set_property_string(mpv, "shuffle", "");
 
     // Jesus Christ SDL, you suck!
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "no");
@@ -153,6 +153,9 @@ void Player::load_playlist() {
                               NULL};
     mpv_command_async(mpv, 0, load_cmd);
     mpv_wait_async_requests(mpv);
+    const char *shuffle_cmd[] = {"playlist-shuffle", NULL};
+    mpv_command_async(mpv, 0, shuffle_cmd);
+    mpv_wait_async_requests(mpv);
     const char *play_cmd[] = {"playlist-play-index", "0", NULL};
     mpv_command_async(mpv, 0, play_cmd);
 }
@@ -191,7 +194,6 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
                 continue;
             }
             if (mp_event->event_id == MPV_EVENT_IDLE) {
-                // TODO: shuffle on second load
                 load_playlist();
             }
             if (mp_event->event_id == MPV_EVENT_FILE_LOADED) {
@@ -229,8 +231,9 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
                         strcmp(event_property->name, "filename")) {
                         die("Unexpected property reply\n");
                     }
-                    auto filename = *static_cast<char **>(event_property->data);
-                    printf("playing %s\n", filename);
+                    auto filename = std::string(
+                        *static_cast<char **>(event_property->data));
+                    printf("playing %s\n", filename.c_str());
                     api.set_play_cmd(filename);
                     mpv_free(event_property->data);
                 } else {

@@ -6,7 +6,7 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D movieTexture;
+uniform sampler2D mpvTexture;
 uniform sampler2D effectTexture;
 uniform sampler2D simplexNoiseTexture;
 uniform vec2 resolution;
@@ -19,7 +19,7 @@ void effect(float intensity)
     float x = log((1.0 - amount / 100.0));
     float offset = texture(simplexNoiseTexture, TexCoords * x).r * 0.5;
     offset = mix(offset, 0.0, intensity);
-    FragColor = texture(movieTexture, TexCoords + offset);
+    FragColor = texture(mpvTexture, TexCoords + offset);
 }
 #endif
 
@@ -53,7 +53,7 @@ void effect(float intensity) {
         for (float i=-1.0; i<=1.0; i++ ) {
             vec2 neighbor = vec2(i,j);
             vec2 point = random2(iSt + neighbor);
-            point = 0.5 + 0.5*sin(time * 0.1 + 6.2831*point);
+            point = 0.5 + 0.5*sin(6.2831*point);
             vec2 diff = neighbor + point - fSt;
             float dist_squared = dot(diff, diff);
 
@@ -67,7 +67,7 @@ void effect(float intensity) {
 
     // Assign a color using the closest point position
     vec2 moviePoint = (mCell + mPoint) / scale;
-    color += texture(movieTexture, moviePoint).rgb;
+    color += texture(mpvTexture, moviePoint).rgb;
 
     FragColor = vec4(color,1.0);
 }
@@ -84,7 +84,7 @@ void effect(float intensity)
         for (float j = -size; j <= size; ++j) {
             vec2 offset = vec2(i,j) * vec2(amount) / resolution;
             offset = mix(offset, vec2(0.0), vec2(intensity));
-            color += texture(movieTexture, TexCoords + offset);
+            color += texture(mpvTexture, TexCoords + offset);
         }
     }
     FragColor = color / pow(size * 2.0 + 1.0, 2.0);
@@ -95,11 +95,11 @@ void effect(float intensity)
 void effect(float intensity)
 {
     if (intensity >= 1.0) {
-        FragColor = texture(movieTexture, TexCoords);
+        FragColor = texture(mpvTexture, TexCoords);
     } else {
         vec2 pixelFactor = resolution / (amount - amount * intensity);
         vec2 coord = round(TexCoords * pixelFactor) / pixelFactor;
-        FragColor = texture(movieTexture, coord);
+        FragColor = texture(mpvTexture, coord);
     }
 }
 #endif
@@ -125,9 +125,9 @@ void effect(float intensity)
     for (float i = 0.0; i < size; ++i) {
         float y = TexCoords.x - TexCoords.y;
         vec2 coords = vec2(step_size * i, y) + noise * 0.001;
-        color += texture(movieTexture, coords);
+        color += texture(mpvTexture, coords);
     }
-    vec4 orig_color = texture(movieTexture, TexCoords);
+    vec4 orig_color = texture(mpvTexture, TexCoords);
     vec4 blurred_color = color / size;
     FragColor = mix(blurred_color, orig_color, intensity);
 }
@@ -136,7 +136,7 @@ void effect(float intensity)
 void main() {
     float intensity = clamp(texture(effectTexture, TexCoords).x, 0.0, 1.0);
     if (amount == 0.0) {
-        FragColor = texture(movieTexture, TexCoords);
+        FragColor = texture(mpvTexture, TexCoords);
     } else {
         effect(intensity);
     }
