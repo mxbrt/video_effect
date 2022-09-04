@@ -118,8 +118,7 @@ int main(int argc, char *argv[]) {
         simplex_noise_texture.render(noise_shader);
     }
 
-    uint64_t player_target_tick = 1;
-    uint64_t last_player_swap = 0;
+    uint64_t last_player_render = 1;
     uint64_t last_render_tick = SDL_GetTicks64();
 
     bool next_file = false;
@@ -141,14 +140,10 @@ int main(int argc, char *argv[]) {
                 case SDL_MOUSEMOTION:
                     break;
                 default:
-                    player.run(&window_ctx, event, mpv_fbos.get_back().fbo,
-                               player_target_tick,
+                    player.run(&window_ctx, event, mpv_fbos.get_front().fbo,
+                               last_player_render,
                                config.get_player_config().playback_duration,
                                next_file);
-                    if (player_target_tick > last_player_swap) {
-                        player_target_tick = last_player_swap;
-                        mpv_fbos.swap();
-                    }
                     break;
             }
         }
@@ -165,6 +160,13 @@ int main(int argc, char *argv[]) {
         }
 
         uint64_t ticks = SDL_GetTicks64();
+        if ((ticks - last_player_render) / 1000 >
+            (uint64_t)config.get_player_config().playback_duration + 5) {
+            // Sometimes, mpv gets stuck after starting the first video (only on
+            // rockpro64). Bail out and restart.
+            die("mpv stuck\n");
+        }
+
         uint32_t buttons;
         SDL_PumpEvents();  // make sure we have the latest input state.
         float fingers_uniform[N_FINGERS][3] = {};

@@ -42,10 +42,9 @@ Player::Player(struct window_ctx *ctx, const std::string &media_path, Api &api,
     : api(api),
       category(category),
       file_loaded(false),
-      media_path(media_path),
-      load_state(Command::Play) {
+      media_path(media_path) {
     mpv = mpv_create();
-    // mpv_request_log_messages(mpv, "debug");
+    //mpv_request_log_messages(mpv, "trace");
     if (!mpv) die("context init failed");
     // Some minor options can only be set before mpv_initialize().
     if (mpv_initialize(mpv) < 0) die("mpv init failed");
@@ -146,36 +145,6 @@ Player::~Player() {
     mpv_detach_destroy(mpv);
 }
 
-void Player::load_playlist() {
-    if (load_state == Command::Stop) {
-        const char *stop_cmd[] = {"stop", NULL};
-        mpv_command_async(mpv, (uint64_t)load_state, stop_cmd);
-        load_state = Command::Loadfile;
-        return;
-    }
-    if (load_state == Command::Loadfile) {
-        auto playback_path = media_path + "/" + to_string(category);
-        const char *load_cmd[] = {"loadfile", playback_path.c_str(), "append",
-                                  NULL};
-        mpv_command_async(mpv, (uint64_t)load_state, load_cmd);
-        load_state = Command::Shuffle;
-        return;
-    }
-    if (load_state == Command::Shuffle) {
-        const char *shuffle_cmd[] = {"playlist-shuffle", NULL};
-        mpv_command_async(mpv, (uint64_t)load_state, shuffle_cmd);
-        load_state = Command::Play;
-        return;
-    }
-    if (load_state == Command::Play) {
-        const char *play_cmd[] = {"playlist-play-index", "0", NULL};
-        mpv_command_async(mpv, (uint64_t)load_state, play_cmd);
-        load_state = Command::Stop;
-        return;
-    }
-    die("Invalid load state %lu\n", load_state);
-}
-
 void Player::play_file(const std::string &file_name) {
     auto absolute_path =
         media_path + "/" + to_string(category) + "/" + file_name;
@@ -210,11 +179,10 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
                 continue;
             }
             if (mp_event->event_id == MPV_EVENT_IDLE) {
-                if (load_state != Command::Play) {
-                    die("player idle while loading playlist\n");
-                }
-                load_state = Command::Stop;
-                load_playlist();
+                auto playback_path = media_path + "/" + to_string(category);
+                const char *load_cmd[] = {"loadfile", playback_path.c_str(), "replace",
+                    NULL};
+                mpv_command_async(mpv, (uint64_t)Command::Loadfile, load_cmd);
             }
             if (mp_event->event_id == MPV_EVENT_FILE_LOADED) {
                 mpv_get_property_async(mpv, (uint64_t)Command::Duration,
@@ -230,13 +198,13 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
                 }
             }
             if (mp_event->event_id == MPV_EVENT_COMMAND_REPLY) {
-                if (mp_event->reply_userdata == (uint64_t)Command::Stop ||
-                    mp_event->reply_userdata == (uint64_t)Command::Loadfile ||
-                    mp_event->reply_userdata == (uint64_t)Command::Shuffle) {
-                    load_playlist();
+                if (mp_event->reply_userdata == (uint64_t)Command::Loadfile) {
+                    const char *shuffle_cmd[] = {"playlist-shuffle", NULL};
+                    mpv_command_async(mpv, (uint64_t)Command::Shuffle,
+                                      shuffle_cmd);
                 }
-                if (mp_event->reply_userdata == (uint64_t)Command::Play) {
-                    printf("Resume playing\n");
+                if (mp_event->reply_userdata == (uint64_t)Command::Shuffle) {
+                    printf("Shuffle complete\n");
                 }
             }
             if (mp_event->event_id == MPV_EVENT_GET_PROPERTY_REPLY) {
@@ -249,13 +217,14 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
                     }
                     auto video_duration =
                         *static_cast<int64_t *>(event_property->data);
-                    printf("video_duration: %ld\n", video_duration);
                     int64_t loops = 0;
-                    if (video_duration > 0) {
-                        loops =
-                            (playback_duration / video_duration) - 1;
+                    if (video_duration > 0 &&
+                        video_duration != playback_duration) {
+                        loops = (playback_duration / video_duration);
                         loops = loops < 0 ? 0 : loops;
                     }
+                    printf("video_duration: %ld loop: %ld loops\n",
+                           video_duration, loops);
                     mpv_set_property_async(mpv, 0, "loop", MPV_FORMAT_INT64,
                                            &loops);
                 } else if (mp_event->reply_userdata ==
@@ -294,26 +263,15 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
             .h = h,
         };
         int mpv_flip_y = 1;
-        int mpv_block_for_target_time = 0;
-
         mpv_render_param params[] = {{MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
                                      // Flip rendering (needed due to
                                      // flipped GL coordinate system).
                                      {MPV_RENDER_PARAM_FLIP_Y, &mpv_flip_y},
-                                     {MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME,
-                                      &mpv_block_for_target_time},
                                      {MPV_RENDER_PARAM_INVALID, NULL}};
 
-        // See render_gl.h on what OpenGL environment mpv expects, and
-        // other API details.
-        mpv_render_frame_info mpv_next_frame_info = {0};
-        mpv_render_context_get_info(
-            mpv_gl, {MPV_RENDER_PARAM_NEXT_FRAME_INFO, &mpv_next_frame_info});
         mpv_render_context_render(mpv_gl, params);
-        int64_t cur_time = mpv_get_time_us(mpv);
-        draw_target_tick = SDL_GetTicks64() +
-                           (mpv_next_frame_info.target_time - cur_time) / 1000;
+        draw_target_tick = SDL_GetTicks64();
+        return;
     }
-    return;
 }
 }  // namespace sendprotest

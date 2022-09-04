@@ -11,10 +11,8 @@
 namespace sendprotest {
 
 enum class Command : uint64_t {
-   Stop = 500,
    Loadfile = 501,
    Shuffle = 502,
-   Play = 503,
    Duration = 504,
    Filename = 505,
 };
