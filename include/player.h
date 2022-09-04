@@ -10,9 +10,18 @@
 
 namespace sendprotest {
 
+enum class Command : uint64_t {
+   Stop = 500,
+   Loadfile = 501,
+   Shuffle = 502,
+   Play = 503,
+   Duration = 504,
+   Filename = 505,
+};
+
 struct window_ctx {
-    SDL_Window *window;
-    SDL_GLContext gl;
+   SDL_Window *window;
+   SDL_GLContext gl;
 };
 
 class Player {
@@ -35,5 +44,6 @@ class Player {
     const std::string media_path;
     mpv_handle *mpv;
     mpv_render_context *mpv_gl;
+    Command load_state;
     };
 }  // namespace sendprotest

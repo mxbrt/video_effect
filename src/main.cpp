@@ -280,6 +280,8 @@ int main(int argc, char *argv[]) {
         }
         SDL_GL_SwapWindow(window_ctx.window);
         next_file = false;
+        fflush(stdout);
+        fflush(stderr);
     }
 done:
     return 0;

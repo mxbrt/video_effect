@@ -1,6 +1,7 @@
 #include "player.h"
 
 #include <SDL_video.h>
+#include <cstdio>
 #include <mpv/client.h>
 #include <mpv/render.h>
 #include <mpv/render_gl.h>
@@ -22,9 +23,6 @@ namespace sendprotest {
 static uint32_t wakeup_on_mpv_render_update;
 static uint32_t wakeup_on_mpv_events;
 
-static const uint64_t mpv_userdata_duration = 1;
-static const uint64_t mpv_userdata_filename = 2;
-
 static void *get_proc_address_mpv(void *fn_ctx, const char *name) {
     return SDL_GL_GetProcAddress(name);
 }
@@ -41,7 +39,11 @@ static void on_mpv_render_update(void *) {
 
 Player::Player(struct window_ctx *ctx, const std::string &media_path, Api &api,
                int category, int playback_duration)
-    : api(api), category(category), file_loaded(false), media_path(media_path) {
+    : api(api),
+      category(category),
+      file_loaded(false),
+      media_path(media_path),
+      load_state(Command::Play) {
     mpv = mpv_create();
     // mpv_request_log_messages(mpv, "debug");
     if (!mpv) die("context init failed");
@@ -145,19 +147,33 @@ Player::~Player() {
 }
 
 void Player::load_playlist() {
-    const char *stop_cmd[] = {"stop", NULL};
-    mpv_command_async(mpv, 0, stop_cmd);
-    mpv_wait_async_requests(mpv);
-    auto playback_path = media_path + "/" + to_string(category);
-    const char *load_cmd[] = {"loadfile", playback_path.c_str(), "append",
-                              NULL};
-    mpv_command_async(mpv, 0, load_cmd);
-    mpv_wait_async_requests(mpv);
-    const char *shuffle_cmd[] = {"playlist-shuffle", NULL};
-    mpv_command_async(mpv, 0, shuffle_cmd);
-    mpv_wait_async_requests(mpv);
-    const char *play_cmd[] = {"playlist-play-index", "0", NULL};
-    mpv_command_async(mpv, 0, play_cmd);
+    if (load_state == Command::Stop) {
+        const char *stop_cmd[] = {"stop", NULL};
+        mpv_command_async(mpv, (uint64_t)load_state, stop_cmd);
+        load_state = Command::Loadfile;
+        return;
+    }
+    if (load_state == Command::Loadfile) {
+        auto playback_path = media_path + "/" + to_string(category);
+        const char *load_cmd[] = {"loadfile", playback_path.c_str(), "append",
+                                  NULL};
+        mpv_command_async(mpv, (uint64_t)load_state, load_cmd);
+        load_state = Command::Shuffle;
+        return;
+    }
+    if (load_state == Command::Shuffle) {
+        const char *shuffle_cmd[] = {"playlist-shuffle", NULL};
+        mpv_command_async(mpv, (uint64_t)load_state, shuffle_cmd);
+        load_state = Command::Play;
+        return;
+    }
+    if (load_state == Command::Play) {
+        const char *play_cmd[] = {"playlist-play-index", "0", NULL};
+        mpv_command_async(mpv, (uint64_t)load_state, play_cmd);
+        load_state = Command::Stop;
+        return;
+    }
+    die("Invalid load state %lu\n", load_state);
 }
 
 void Player::play_file(const std::string &file_name) {
@@ -190,17 +206,21 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
             if (mp_event->event_id == MPV_EVENT_LOG_MESSAGE) {
                 mpv_event_log_message *msg =
                     (mpv_event_log_message *)mp_event->data;
-                printf("[mpv] %s", msg->text);
+                printf("[mpv] %s\n", msg->text);
                 continue;
             }
             if (mp_event->event_id == MPV_EVENT_IDLE) {
+                if (load_state != Command::Play) {
+                    die("player idle while loading playlist\n");
+                }
+                load_state = Command::Stop;
                 load_playlist();
             }
             if (mp_event->event_id == MPV_EVENT_FILE_LOADED) {
-                mpv_get_property_async(mpv, mpv_userdata_duration, "duration",
-                                       MPV_FORMAT_INT64);
-                mpv_get_property_async(mpv, mpv_userdata_filename, "filename",
-                                       MPV_FORMAT_STRING);
+                mpv_get_property_async(mpv, (uint64_t)Command::Duration,
+                                       "duration", MPV_FORMAT_INT64);
+                mpv_get_property_async(mpv, (uint64_t)Command::Filename,
+                                       "filename", MPV_FORMAT_STRING);
                 file_loaded = true;
             }
             if (mp_event->event_id == MPV_EVENT_PLAYBACK_RESTART) {
@@ -209,10 +229,20 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
                     playlist_next = true;
                 }
             }
+            if (mp_event->event_id == MPV_EVENT_COMMAND_REPLY) {
+                if (mp_event->reply_userdata == (uint64_t)Command::Stop ||
+                    mp_event->reply_userdata == (uint64_t)Command::Loadfile ||
+                    mp_event->reply_userdata == (uint64_t)Command::Shuffle) {
+                    load_playlist();
+                }
+                if (mp_event->reply_userdata == (uint64_t)Command::Play) {
+                    printf("Resume playing\n");
+                }
+            }
             if (mp_event->event_id == MPV_EVENT_GET_PROPERTY_REPLY) {
                 auto event_property =
                     static_cast<mpv_event_property *>(mp_event->data);
-                if (mp_event->reply_userdata == mpv_userdata_duration) {
+                if (mp_event->reply_userdata == (uint64_t)Command::Duration) {
                     if (event_property->format != MPV_FORMAT_INT64 ||
                         strcmp(event_property->name, "duration")) {
                         die("Unexpected property reply\n");
@@ -228,7 +258,8 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
                     }
                     mpv_set_property_async(mpv, 0, "loop", MPV_FORMAT_INT64,
                                            &loops);
-                } else if (mp_event->reply_userdata == mpv_userdata_filename) {
+                } else if (mp_event->reply_userdata ==
+                           (uint64_t)Command::Filename) {
                     if (event_property->format != MPV_FORMAT_STRING ||
                         strcmp(event_property->name, "filename")) {
                         die("Unexpected property reply\n");
