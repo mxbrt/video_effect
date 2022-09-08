@@ -9,6 +9,7 @@ in vec2 TexCoords;
 uniform sampler2D mpvTexture;
 uniform sampler2D effectTexture;
 uniform sampler2D simplexNoiseTexture;
+uniform sampler2D voronoiNoise;
 uniform sampler2D lastFrame;
 uniform vec2 resolution;
 uniform float amount;
@@ -25,62 +26,18 @@ void effect(float intensity)
 #endif
 
 #ifdef Voronoi
-precision highp float;
-vec2 random2( vec2 p ) {
-    return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);
-}
-precision mediump float;
-
 void effect(float intensity) {
-    vec2 st = TexCoords;
-    vec3 color = vec3(.0);
-
-    // Scale
-    //float scale = 1.0 + ((100.0 - amount) + 100.0 * intensity);
-    float step_intensity = floor(intensity * 100.0) / 100.0;
-    float scale_factor = amount - (amount * step_intensity) + 1.0;
-    vec2 scale = resolution / scale_factor;
-    st *= scale;
-
-    // Tile the space
-    vec2 iSt = floor(st);
-    vec2 fSt = fract(st);
-
-    float mDist = 10.;  // minimum distance
-    vec2 mPoint;        // minimum point
-    vec2 mCell;
-
-    for (float j=-1.0; j<=1.0; j++ ) {
-        for (float i=-1.0; i<=1.0; i++ ) {
-            vec2 neighbor = vec2(i,j);
-            vec2 point = random2(iSt + neighbor);
-            point = 0.5 + 0.5*sin(6.2831*point);
-            vec2 diff = neighbor + point - fSt;
-            float dist_squared = dot(diff, diff);
-
-            if( dist_squared < mDist ) {
-                mCell = iSt + neighbor;
-                mDist = dist_squared;
-                mPoint = point;
-            }
-        }
+    intensity += (100.0 - amount) / 100.0;
+    float tileIdx = floor((1.0 - intensity) * 15.0);
+    vec2 tileCoord = vec2(floor(tileIdx / 4.0), mod(tileIdx, 4.0));
+    if (intensity < 0.99) {
+        vec2 moviePoint = texelFetch(voronoiNoise, ivec2((TexCoords + tileCoord) * resolution), 0).rg;
+        vec4 color = texture(mpvTexture, moviePoint);
+        vec4 lastColor = texture(lastFrame, moviePoint);
+        FragColor = mix(lastColor, color, 0.025 + intensity);
+    } else {
+        FragColor = texture(mpvTexture, TexCoords);
     }
-
-    // Assign a color using the closest point position
-    vec2 moviePoint = (mCell + mPoint) / scale;
-    color += texture(mpvTexture, moviePoint).rgb;
-
-    vec4 lastColor = texture(lastFrame, moviePoint);
-    FragColor = vec4(mix(lastColor.rgb, color, 0.025 + intensity),1.0);
-}
-#endif
-
-#ifdef Glitch
-void effect(float intensity) {
-    vec4 lastColor = texture(lastFrame, TexCoords);
-    vec4 color = texture(mpvTexture, TexCoords);
-
-    FragColor = color;
 }
 #endif
 

@@ -36,6 +36,7 @@ void Texture::render(Shader& shader) {
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   glDisable(GL_DEPTH_TEST);
   glBindVertexArray(vbo.vao);
+  glViewport(0, 0, width, height);
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
   glDrawArrays(GL_TRIANGLES, 0, 6);

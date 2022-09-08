@@ -110,19 +110,27 @@ int main(int argc, char *argv[]) {
     DoubleFbo render_fbos = DoubleFbo(width, height);
     DoubleFbo effect_fbos = DoubleFbo(width, height, GL_R32F);
 
-    // Noise textures
-    vector<Texture> noise_textures;
-    size_t noise_idx = 0;
+    // Precompute textures
+    // Simplex Noise
+    vector<Texture> simplex_textures;
+    size_t simplex_idx = 0;
     {
         for (int i = 0; i < 16; i++) {
-            auto noise_macro = shader_macro + "\n#define OFFSET " +
+            auto macro = shader_macro + "\n#define OFFSET " +
                                to_string(i * 10000) + "\n";
-            auto noise_shader =
-                Shader("shaders/vert.glsl", "shaders/noise.glsl", noise_macro);
-            auto texture = Texture(width, height);
-            texture.render(noise_shader);
-            noise_textures.push_back(texture);
+            auto simplex_shader =
+                Shader("shaders/vert.glsl", "shaders/simplex.glsl", macro);
+            auto texture = Texture(width, height, GL_R32F);
+            texture.render(simplex_shader);
+            simplex_textures.push_back(texture);
         }
+    }
+    // Voronoi noise
+    auto voronoise_texture = Texture(width * 4, height * 4);
+    {
+        auto voronoise_shader =
+            Shader("shaders/vert.glsl", "shaders/voronoi.glsl", shader_macro);
+        voronoise_texture.render(voronoise_shader);
     }
 
     uint64_t last_player_render = 1;
@@ -263,13 +271,15 @@ int main(int argc, char *argv[]) {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, effect_fbos.get_front().texture.id);
         glActiveTexture(GL_TEXTURE2);
-        auto noise_texture_id = noise_textures[noise_idx].id;
+        auto simplex_texture_id = simplex_textures[simplex_idx].id;
         if (next_file) {
-            noise_idx = (noise_idx + 1) % noise_textures.size();
+            simplex_idx = (simplex_idx + 1) % simplex_textures.size();
         }
-        glBindTexture(GL_TEXTURE_2D, noise_texture_id);
+        glBindTexture(GL_TEXTURE_2D, simplex_texture_id);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, render_fbos.get_back().texture.id);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, voronoise_texture.id);
         glBindFramebuffer(GL_FRAMEBUFFER, render_fbos.get_front().fbo);
         glDisable(GL_DEPTH_TEST);
         glUniform1i(
@@ -281,6 +291,8 @@ int main(int argc, char *argv[]) {
             2);
         glUniform1i(glGetUniformLocation(effect_shader.program, "lastFrame"),
                     3);
+        glUniform1i(glGetUniformLocation(effect_shader.program, "voronoiNoise"),
+                    4);
         glUniform2f(glGetUniformLocation(effect_shader.program, "resolution"),
                     width, height);
         glUniform1f(glGetUniformLocation(effect_shader.program, "amount"),
