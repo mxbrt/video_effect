@@ -35,7 +35,7 @@ void Shader::init() {
     if (!success) {
         char info[512];
         glGetProgramInfoLog(shader_program, 512, NULL, info);
-        die("shader linking failed\n\n%s", info);
+        printf("shader linking failed\n\n%s", info);
     }
     program = shader_program;
     src_mtime = max_mtime();
@@ -58,7 +58,7 @@ int Shader::compile(const string &path, int type) {
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(shader, 512, NULL, info);
-        die("%s: compilation error\n%s\n", path.c_str(), info);
+        printf("%s: compilation error\n%s\n", path.c_str(), info);
     }
     return shader;
 }

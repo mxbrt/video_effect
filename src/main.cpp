@@ -268,6 +268,9 @@ int main(int argc, char *argv[]) {
         glUseProgram(effect_shader.program);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mpv_fbo.texture.id);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                        GL_LINEAR_MIPMAP_LINEAR);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, effect_fbos.get_front().texture.id);
         glActiveTexture(GL_TEXTURE2);

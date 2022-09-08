@@ -29,10 +29,11 @@ void effect(float intensity)
 void effect(float intensity) {
     intensity += (100.0 - amount) / 100.0;
     float tileIdx = floor((1.0 - intensity) * 15.0);
+    float mipmapLevel = tileIdx / 6.0;
     vec2 tileCoord = vec2(floor(tileIdx / 4.0), mod(tileIdx, 4.0));
     if (intensity < 0.99) {
         vec2 moviePoint = texelFetch(voronoiNoise, ivec2((TexCoords + tileCoord) * resolution), 0).rg;
-        vec4 color = texture(mpvTexture, moviePoint);
+        vec4 color = textureLod(mpvTexture, moviePoint, mipmapLevel);
         vec4 lastColor = texture(lastFrame, moviePoint);
         FragColor = mix(lastColor, color, 0.025 + intensity);
     } else {
@@ -72,11 +73,26 @@ void effect(float intensity)
 }
 #endif
 
+#ifdef Glitch
+vec2 random2( vec2 p ) {
+    return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);
+}
+
+void effect(float intensity)
+{
+    //vec2 offset = floor(random2(TexCoords) * 10.0) / 100.0;
+    //vec4 color = texture(mpvTexture, TexCoords + offset);
+    //FragColor = color;
+    float ipmapLevel = amount / 10.0;
+    vec4 pixel = textureLod(mpvTexture, TexCoords, mipmapLevel);
+    FragColor = pixel;
+}
+#endif
+
 #ifdef Debug
 void effect(float intensity)
 {
     FragColor = vec4(vec3(intensity), 1.0);
-    //FragColor = texture(simplexNoiseTexture, TexCoords);
 }
 #endif
 
