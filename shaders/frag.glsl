@@ -9,6 +9,7 @@ in vec2 TexCoords;
 uniform sampler2D mpvTexture;
 uniform sampler2D effectTexture;
 uniform sampler2D simplexNoiseTexture;
+uniform sampler2D lastFrame;
 uniform vec2 resolution;
 uniform float amount;
 uniform float time;
@@ -69,7 +70,17 @@ void effect(float intensity) {
     vec2 moviePoint = (mCell + mPoint) / scale;
     color += texture(mpvTexture, moviePoint).rgb;
 
-    FragColor = vec4(color,1.0);
+    vec4 lastColor = texture(lastFrame, moviePoint);
+    FragColor = vec4(mix(lastColor.rgb, color, 0.025 + intensity),1.0);
+}
+#endif
+
+#ifdef Glitch
+void effect(float intensity) {
+    vec4 lastColor = texture(lastFrame, TexCoords);
+    vec4 color = texture(mpvTexture, TexCoords);
+
+    FragColor = color;
 }
 #endif
 

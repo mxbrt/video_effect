@@ -15,7 +15,7 @@ Texture::Texture(int width, int height, int internalformat)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-Texture::~Texture() { glDeleteTextures(1, &id); }
+void Texture::release() { glDeleteTextures(1, &id); }
 
 void Texture::render(Shader& shader) {
   unsigned int fbo, rbo;

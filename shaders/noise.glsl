@@ -79,8 +79,9 @@ float snoise(vec2 v) {
 
 void main()
 {
-    vec2 st = gl_FragCoord.xy/vec2(1920.0, 1080.0);
-    st.x *= 1920.0/1080.0;
+    vec2 resolution = vec2(1920.0, 1080.0);
+    vec2 st = (gl_FragCoord.xy + vec2(OFFSET)) /resolution;
+    st.x *= resolution.x / resolution.y;
     st *= 100.0;
 
     float x = snoise(st) * .5 + .5;

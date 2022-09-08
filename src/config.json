@@ -26,13 +26,18 @@
             "finger_radius": 0.20000000298023224
         },
         "Voronoi": {
-            "effect_amount": 72.33000183105469,
+            "effect_amount": 10.548999786376953,
+            "effect_fade_in": 0.04399999976158142,
+            "finger_radius": 0.21400000154972076
+        },
+        "Glitch": {
+            "effect_amount": 37.13100051879883,
             "effect_fade_in": 0.04399999976158142,
             "finger_radius": 0.21400000154972076
         }
     },
     "PlayerConfig": {
-        "category": 4,
-        "playback_duration": 30
+        "category": 0,
+        "playback_duration": 1
     }
 }

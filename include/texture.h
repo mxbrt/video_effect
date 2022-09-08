@@ -5,12 +5,8 @@ namespace sendprotest {
 class Texture {
  public:
   Texture(int width, int height, int internalformat = GL_RGB);
-  ~Texture();
-  Texture(const Texture&) = delete;
-  Texture& operator=(const Texture&) = delete;
-
+  void release();
   void render(Shader& shader);
-
   unsigned int id, width, height;
 };
 }  // namespace sendprotest

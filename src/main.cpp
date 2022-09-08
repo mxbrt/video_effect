@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 
     auto gui = Gui(window_ctx);
 
-    auto shader_macro = "#version 300 es\n#define Swirl\n";
+    string shader_macro = "#version 300 es\n#define Swirl\n";
     auto effect_shader =
         Shader("shaders/vert.glsl", "shaders/frag.glsl", shader_macro);
     auto input_shader =
@@ -106,16 +106,23 @@ int main(int argc, char *argv[]) {
     auto empty_vec = vector<float>();
     auto vbo = Vbo(empty_vec);
     // framebuffer configuration
-    DoubleFbo mpv_fbos = DoubleFbo(width, height);
+    Fbo mpv_fbo = Fbo(width, height);
+    DoubleFbo render_fbos = DoubleFbo(width, height);
     DoubleFbo effect_fbos = DoubleFbo(width, height, GL_R32F);
 
     // Noise textures
-    // FIXME: cleanup render pass resources
-    auto simplex_noise_texture = Texture(width, height, GL_R32F);
+    vector<Texture> noise_textures;
+    size_t noise_idx = 0;
     {
-        auto noise_shader =
-            Shader("shaders/vert.glsl", "shaders/noise.glsl", shader_macro);
-        simplex_noise_texture.render(noise_shader);
+        for (int i = 0; i < 16; i++) {
+            auto noise_macro = shader_macro + "\n#define OFFSET " +
+                               to_string(i * 10000) + "\n";
+            auto noise_shader =
+                Shader("shaders/vert.glsl", "shaders/noise.glsl", noise_macro);
+            auto texture = Texture(width, height);
+            texture.render(noise_shader);
+            noise_textures.push_back(texture);
+        }
     }
 
     uint64_t last_player_render = 1;
@@ -140,7 +147,7 @@ int main(int argc, char *argv[]) {
                 case SDL_MOUSEMOTION:
                     break;
                 default:
-                    player.run(&window_ctx, event, mpv_fbos.get_front().fbo,
+                    player.run(&window_ctx, event, mpv_fbo.fbo,
                                last_player_render,
                                config.get_player_config().playback_duration,
                                next_file);
@@ -223,6 +230,7 @@ int main(int argc, char *argv[]) {
         uint64_t delta = ticks - last_render_tick;
         last_render_tick = ticks;
         effect_fbos.swap();
+        render_fbos.swap();
 
         glUseProgram(input_shader.program);
         glActiveTexture(GL_TEXTURE0);
@@ -251,12 +259,18 @@ int main(int argc, char *argv[]) {
 
         glUseProgram(effect_shader.program);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, mpv_fbos.get_front().texture.id);
+        glBindTexture(GL_TEXTURE_2D, mpv_fbo.texture.id);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, effect_fbos.get_front().texture.id);
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, simplex_noise_texture.id);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        auto noise_texture_id = noise_textures[noise_idx].id;
+        if (next_file) {
+            noise_idx = (noise_idx + 1) % noise_textures.size();
+        }
+        glBindTexture(GL_TEXTURE_2D, noise_texture_id);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, render_fbos.get_back().texture.id);
+        glBindFramebuffer(GL_FRAMEBUFFER, render_fbos.get_front().fbo);
         glDisable(GL_DEPTH_TEST);
         glUniform1i(
                 glGetUniformLocation(effect_shader.program, "mpvTexture"), 0);
@@ -265,6 +279,8 @@ int main(int argc, char *argv[]) {
         glUniform1i(
             glGetUniformLocation(effect_shader.program, "simplexNoiseTexture"),
             2);
+        glUniform1i(glGetUniformLocation(effect_shader.program, "lastFrame"),
+                    3);
         glUniform2f(glGetUniformLocation(effect_shader.program, "resolution"),
                     width, height);
         glUniform1f(glGetUniformLocation(effect_shader.program, "amount"),
@@ -280,6 +296,11 @@ int main(int argc, char *argv[]) {
         if (opts.enable_gui) {
             gui.render(config);
         }
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, render_fbos.get_front().fbo);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
+                          GL_COLOR_BUFFER_BIT, GL_NEAREST);
         SDL_GL_SwapWindow(window_ctx.window);
         next_file = false;
         fflush(stdout);
