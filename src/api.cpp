@@ -39,10 +39,12 @@ void Api::server_run() {
 
   server.Get("/play", [this](const Request& req, Response& res) {
     scoped_lock lock(command_mutex);
+    res.set_header("Access-Control-Allow-Origin", "*");
     res.body = command;
   });
 
   server.Get("/category", [this](const Request& req, Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
     res.body = to_string(category);
   });
 

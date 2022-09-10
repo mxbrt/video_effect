@@ -151,6 +151,9 @@ int main(int argc, char *argv[]) {
                 case SDL_WINDOWEVENT:
                     break;
                 case SDL_KEYDOWN:
+                    if (event.key.keysym.sym == SDLK_c) {
+                        opts.enable_gui = !opts.enable_gui;
+                    }
                     break;
                 case SDL_MOUSEMOTION:
                     break;
