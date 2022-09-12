@@ -21,12 +21,14 @@ void from_json(const json& j, EffectConfig& cfg) {
 
 void to_json(json& j, const PlayerConfig& cfg) {
   j = json{{"playback_duration", cfg.playback_duration},
-           {"category", cfg.category}};
+           {"category", cfg.category},
+           {"selected_effect", cfg.selected_effect}};
 }
 
 void from_json(const json& j, PlayerConfig& cfg) {
   j.at("playback_duration").get_to(cfg.playback_duration);
   j.at("category").get_to(cfg.category);
+  j.at("selected_effect").get_to(cfg.selected_effect);
 }
 
 Config::Config(const string& json_path) : json_path(json_path) {
@@ -34,7 +36,6 @@ Config::Config(const string& json_path) : json_path(json_path) {
   json j = json::parse(f);
   effect_data = j["EffectConfig"].get<map<string, EffectConfig>>();
   player_config = j["PlayerConfig"].get<PlayerConfig>();
-  selected_effect = effect_data.begin()->first;
 }
 
 map<string, EffectConfig>& Config::get_effects() { return effect_data; }
@@ -48,8 +49,8 @@ void Config::save() {
   f << std::setw(4) << j << std::endl;
 }
 
-EffectConfig& Config::get_selected_effect() { return effect_data[selected_effect]; }
-const string& Config::get_selected_name() { return selected_effect; }
-void Config::set_selected_name(const string& name) { selected_effect = name; }
+EffectConfig& Config::get_selected_effect() { return effect_data[player_config.selected_effect]; }
+const string& Config::get_selected_name() { return player_config.selected_effect; }
+void Config::set_selected_name(const string& name) { player_config.selected_effect = name; }
 
 }  // namespace sendprotest

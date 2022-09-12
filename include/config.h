@@ -8,6 +8,7 @@ using namespace std;
 struct PlayerConfig {
   int playback_duration;
   int category;
+  string selected_effect;
 };
 
 struct EffectConfig {
@@ -31,7 +32,6 @@ class Config {
  private:
   map<string, EffectConfig> effect_data;
   PlayerConfig player_config;
-  string selected_effect;
   const string json_path;
 };
 }  // namespace sendprotest

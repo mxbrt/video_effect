@@ -26,6 +26,7 @@ void effect(float intensity)
 #endif
 
 #ifdef Voronoi
+precision highp float;
 void effect(float intensity) {
     intensity += (100.0 - amount) / 100.0;
     float tileIdx = floor((1.0 - intensity) * 15.0);
@@ -83,7 +84,7 @@ void effect(float intensity)
     //vec2 offset = floor(random2(TexCoords) * 10.0) / 100.0;
     //vec4 color = texture(mpvTexture, TexCoords + offset);
     //FragColor = color;
-    float ipmapLevel = amount / 10.0;
+    float mipmapLevel = amount / 10.0;
     vec4 pixel = textureLod(mpvTexture, TexCoords, mipmapLevel);
     FragColor = pixel;
 }

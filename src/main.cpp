@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 
     auto gui = Gui(window_ctx);
 
-    string shader_macro = "#version 300 es\n#define Swirl\n";
+    string shader_macro = "#version 300 es\n#define " + current_effect + "\n";
     auto effect_shader =
         Shader("shaders/vert.glsl", "shaders/frag.glsl", shader_macro);
     auto input_shader =
