@@ -43,10 +43,10 @@ void effect(float intensity) {
 }
 #endif
 
-#ifdef Blur
-// FIXME: optimize with horizontal & vertical blur render passes
+#ifdef Glitch
 void effect(float intensity)
 {
+    float mipmapLevel = (amount / 10.0) * (1.0 - intensity);
     float invAspect = resolution.y / resolution.x;
     vec4 color = vec4(0.0);
     float size = 1.0;
@@ -54,7 +54,7 @@ void effect(float intensity)
         for (float j = -size; j <= size; ++j) {
             vec2 offset = vec2(i,j) * vec2(amount) / resolution;
             offset = mix(offset, vec2(0.0), vec2(intensity));
-            color += texture(mpvTexture, TexCoords + offset);
+            color += textureLod(mpvTexture, TexCoords + offset, mipmapLevel);
         }
     }
     FragColor = color / pow(size * 2.0 + 1.0, 2.0);
@@ -62,6 +62,7 @@ void effect(float intensity)
 #endif
 
 #ifdef Pixel
+precision highp float;
 void effect(float intensity)
 {
     if (intensity >= 1.0) {
@@ -69,22 +70,21 @@ void effect(float intensity)
     } else {
         vec2 pixelFactor = resolution / (amount - amount * intensity);
         vec2 coord = round(TexCoords * pixelFactor) / pixelFactor;
-        FragColor = texture(mpvTexture, coord);
+        vec4 color = texture(mpvTexture, coord);
+        vec4 lastColor = texture(lastFrame, coord);
+        FragColor = mix(lastColor, color, 0.025 + intensity);
     }
 }
 #endif
 
-#ifdef Glitch
+#ifdef Blur
 vec2 random2( vec2 p ) {
     return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);
 }
 
 void effect(float intensity)
 {
-    //vec2 offset = floor(random2(TexCoords) * 10.0) / 100.0;
-    //vec4 color = texture(mpvTexture, TexCoords + offset);
-    //FragColor = color;
-    float mipmapLevel = amount / 10.0;
+    float mipmapLevel = (amount - amount * intensity) / 10.0;
     vec4 pixel = textureLod(mpvTexture, TexCoords, mipmapLevel);
     FragColor = pixel;
 }
@@ -98,23 +98,15 @@ void effect(float intensity)
 #endif
 
 #ifdef Brushed
+precision highp float;
 void effect(float intensity)
 {
-    vec4 color = vec4(0.0);
-    float size = 3.0;
-    float step_size = (resolution.x / size) / resolution.x;
-    vec2 pixel_size = 1.0 / resolution;
-    float t = time * 0.0001;
-    vec2 noise = vec2(texture(simplexNoiseTexture, TexCoords * 10.0 + t).r,
-                      texture(simplexNoiseTexture, TexCoords * 30.0 + t).r);
-    for (float i = 0.0; i < size; ++i) {
-        float y = TexCoords.x - TexCoords.y;
-        vec2 coords = vec2(step_size * i, y) + noise * 0.001;
-        color += texture(mpvTexture, coords);
-    }
-    vec4 orig_color = texture(mpvTexture, TexCoords);
-    vec4 blurred_color = color / size;
-    FragColor = mix(blurred_color, orig_color, intensity);
+    float mipmapLevel = (amount / 10.0) * (1.0 - intensity);
+    float y = TexCoords.x - TexCoords.y;
+    float x = TexCoords.y - TexCoords.x;
+    vec2 coords = mix(vec2(x, y), TexCoords, intensity);
+    vec4 color = textureLod(mpvTexture, coords, mipmapLevel);
+    FragColor = color;
 }
 #endif
 
