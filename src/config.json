@@ -21,14 +21,14 @@
             "finger_radius": 0.21400000154972076
         },
         "Pixel": {
-            "effect_amount": 10.0,
-            "effect_fade_in": 0.20000000298023224,
+            "effect_amount": 60.3380012512207,
+            "effect_fade_in": 0.03400000184774399,
             "finger_radius": 0.20000000298023224
         },
         "Swirl": {
             "effect_amount": 10.0,
-            "effect_fade_in": 0.20000000298023224,
-            "finger_radius": 0.20000000298023224
+            "effect_fade_in": 0.34599998593330383,
+            "finger_radius": 0.30399999022483826
         },
         "Voronoi": {
             "effect_amount": 80.59100341796875,
@@ -38,7 +38,7 @@
     },
     "PlayerConfig": {
         "category": 0,
-        "playback_duration": 1,
+        "playback_duration": 61,
         "selected_effect": "Swirl"
     }
 }

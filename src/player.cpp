@@ -142,7 +142,7 @@ Player::Player(struct window_ctx *ctx, const std::string &media_path, Api &api,
 
 Player::~Player() {
     mpv_render_context_free(mpv_gl);
-    mpv_detach_destroy(mpv);
+    mpv_destroy(mpv);
 }
 
 void Player::play_file(const std::string &file_name) {
