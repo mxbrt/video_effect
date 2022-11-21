@@ -148,6 +148,10 @@ Player::~Player() {
 void Player::play_file(const std::string &file_name) {
     auto absolute_path =
         media_path + "/" + to_string(category) + "/" + file_name;
+    if (category == 9) {
+        absolute_path =
+            media_path + "/" + file_name;
+    }
     const char *loadfile_cmd[] = {"loadfile", absolute_path.c_str(), "replace",
                                   NULL};
     mpv_command_async(mpv, 0, loadfile_cmd);
@@ -180,6 +184,10 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
             }
             if (mp_event->event_id == MPV_EVENT_IDLE) {
                 auto playback_path = media_path + "/" + to_string(category);
+                if (category == 9) {
+                    // special category to load all categories
+                    playback_path = media_path + "/";
+                }
                 const char *load_cmd[] = {"loadfile", playback_path.c_str(), "replace",
                     NULL};
                 mpv_command_async(mpv, (uint64_t)Command::Loadfile, load_cmd);
@@ -204,7 +212,8 @@ void Player::run(struct window_ctx *ctx, SDL_Event event, unsigned int fbo,
                                       shuffle_cmd);
                 }
                 if (mp_event->reply_userdata == (uint64_t)Command::Shuffle) {
-                    printf("Shuffle complete\n");
+                    const char *next_cmd[] = {"playlist-next", NULL};
+                    mpv_command_async(mpv, 0, next_cmd);
                 }
             }
             if (mp_event->event_id == MPV_EVENT_GET_PROPERTY_REPLY) {

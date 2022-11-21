@@ -37,7 +37,7 @@
         }
     },
     "PlayerConfig": {
-        "category": 0,
+        "category": 9,
         "playback_duration": 61,
         "selected_effect": "Swirl"
     }
