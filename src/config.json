@@ -1,7 +1,7 @@
 {
     "EffectConfig": {
         "Blur": {
-            "effect_amount": 8.861000061035156,
+            "effect_amount": 50.861000061035156,
             "effect_fade_in": 0.20000000298023224,
             "finger_radius": 0.578000009059906
         },
@@ -9,16 +9,6 @@
             "effect_amount": 10.0,
             "effect_fade_in": 0.20000000298023224,
             "finger_radius": 0.20000000298023224
-        },
-        "Debug": {
-            "effect_amount": 10.0,
-            "effect_fade_in": 0.20000000298023224,
-            "finger_radius": 0.20000000298023224
-        },
-        "Glitch": {
-            "effect_amount": 37.13100051879883,
-            "effect_fade_in": 0.04399999976158142,
-            "finger_radius": 0.21400000154972076
         },
         "Pixel": {
             "effect_amount": 60.3380012512207,
@@ -38,7 +28,7 @@
     },
     "PlayerConfig": {
         "category": 9,
-        "playback_duration": 61,
+        "playback_duration": 7,
         "selected_effect": "Swirl"
     }
 }

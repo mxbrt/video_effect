@@ -17,6 +17,7 @@
 #include "SDL_syswm.h"
 #include "SDL_timer.h"
 #include "SDL_version.h"
+#include "config.h"
 #include "util.h"
 namespace sendprotest {
 
@@ -148,7 +149,7 @@ Player::~Player() {
 void Player::play_file(const std::string &file_name) {
     auto absolute_path =
         media_path + "/" + to_string(category) + "/" + file_name;
-    if (category == 9) {
+    if (category == COMBINED_CATEGORY) {
         absolute_path =
             media_path + "/" + file_name;
     }

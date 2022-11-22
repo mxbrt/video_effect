@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <fstream>
+#include <iterator>
 
 #include "json.hpp"
 
@@ -49,8 +50,22 @@ void Config::save() {
   f << std::setw(4) << j << std::endl;
 }
 
-EffectConfig& Config::get_selected_effect() { return effect_data[player_config.selected_effect]; }
-const string& Config::get_selected_name() { return player_config.selected_effect; }
+
+EffectConfig& Config::get_selected_effect() {
+  return effect_data[player_config.selected_effect];
+}
+
+void Config::set_random_effect() {
+  int random_idx = rand() % effect_data.size();
+  auto item = effect_data.begin();
+  std::advance(item, random_idx);
+  player_config.selected_effect = item->first;
+}
+
+const string& Config::get_selected_name() {
+  return player_config.selected_effect;
+}
+
 void Config::set_selected_name(const string& name) { player_config.selected_effect = name; }
 
 }  // namespace sendprotest

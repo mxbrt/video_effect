@@ -90,6 +90,9 @@ int main(int argc, char *argv[]) {
     auto current_effect = config.get_selected_name();
     auto current_category = config.get_player_config().category;
 
+    // initialize random seed
+    srand (time(NULL));
+
     // Start API server
     auto api = Api(opts.media_path, opts.website_path, current_category);
     auto player = Player(&window_ctx, opts.media_path, api, current_category,
@@ -224,6 +227,15 @@ int main(int argc, char *argv[]) {
         }
 
         if (current_effect != config.get_selected_name()) {
+            current_effect = config.get_selected_name();
+            stringstream ss;
+            ss << "#version 300 es\n#define " << current_effect << "\n";
+            effect_shader.set_macros(ss.str());
+            input_shader.set_macros(ss.str());
+        }
+
+        if (next_file && current_category == COMBINED_CATEGORY) {
+            config.set_random_effect();
             current_effect = config.get_selected_name();
             stringstream ss;
             ss << "#version 300 es\n#define " << current_effect << "\n";
